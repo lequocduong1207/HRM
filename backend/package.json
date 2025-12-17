@@ -1,0 +1,28 @@
+{
+  "name": "hrm-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run swagger && tsx watch src/server.ts",
+    "start": "node src/server.js",
+    "swagger": "tsx src/config/swagger-autogen.ts",
+    "build": "npm run swagger && tsc"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mssql": "^11.0.1",
+    "pg": "^8.10.0",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/swagger-ui-express": "^4.1.8",
+    "nodemon": "^3.1.11",
+    "tsx": "^4.21.0"
+  }
+}
