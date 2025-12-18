@@ -33,7 +33,13 @@ async function createAdmin() {
         };
 
         // Lưu vào database
-        const createdAdmin = await userRepository.create(admin);
+        const createdAdmin = await userRepository.create(admin as {
+                username: string;
+                email: string;
+                passwordHash: string;
+                role: string;
+                employeeId?: number;
+        });
         console.log("✅ Admin account created successfully!", createdAdmin);
         process.exit(0);
         

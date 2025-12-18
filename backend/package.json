@@ -4,16 +4,19 @@
   "type": "module",
   "scripts": {
     "dev": "npm run swagger && tsx watch src/server.ts",
-    "start": "node src/server.js",
+    "start": "tsx src/server.ts",
     "swagger": "tsx src/config/swagger-autogen.ts",
     "build": "npm run swagger && tsc"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
     "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
+    "helmet": "^8.1.0",
+    "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.0",
     "mssql": "^11.0.1",
     "pg": "^8.10.0",
@@ -21,8 +24,16 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/mssql": "^9.1.8",
+    "@types/node": "^25.0.3",
     "@types/swagger-ui-express": "^4.1.8",
     "nodemon": "^3.1.11",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

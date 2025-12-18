@@ -17,6 +17,25 @@ export class EmployeeEntity {
     constructor(data: Partial<EmployeeEntity>) {
         Object.assign(this, data);
     }
+
+    toJSON() {
+        return {
+            employeeId: this.employeeId,
+            fullName: this.fullName,
+            dob: this.dob,
+            gender: this.gender,
+            email: this.email,
+            phone: this.phone,
+            address: this.address,
+            nationalId: this.nationalId,       
+            departmentId: this.departmentId,
+            position: this.position,
+            hireDate: this.hireDate,
+            employmentStatus: this.employmentStatus,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt
+        }
+    }
     
     /**
      * Kiểm tra nhân viên có đang làm việc không
