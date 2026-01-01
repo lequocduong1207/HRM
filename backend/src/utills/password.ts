@@ -3,8 +3,8 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 
 export interface JwtPayload {
-    userId: number;
-    username: string;
+    userId: string;  // MongoDB _id as string
+    email: string;
     role: string;
 }
 
@@ -35,17 +35,21 @@ export const comparePassword = async (
 
 /**
  * Generate JWT access token
- * @param payload - Token payload (userId, username, role)
+ * @param payload - Token payload (userId, email, role)
  * @returns JWT token
  */
 export const generateToken = (payload: JwtPayload): string => {
+    if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+
     const options: SignOptions = {
-        expiresIn: 60 * 60 * 24 * 7  
+        expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any
     };
 
     const token = jwt.sign(
         payload,
-        process.env.JWT_SECRET as string,
+        process.env.JWT_SECRET,
         options
     );
     return token;
@@ -53,17 +57,21 @@ export const generateToken = (payload: JwtPayload): string => {
 
 /**
  * Generate JWT refresh token
- * @param payload - Token payload (userId, username, role)
+ * @param payload - Token payload (userId, email, role)
  * @returns JWT refresh token
  */
 export const generateRefreshToken = (payload: JwtPayload): string => {
+    if (!process.env.JWT_REFRESH_SECRET) {
+        throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+    }
+
     const options: SignOptions = {
-        expiresIn: 60 * 60 * 24 * 7
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as any
     };
 
     const refreshToken = jwt.sign(
         payload,
-        process.env.JWT_REFRESH_SECRET as string,
+        process.env.JWT_REFRESH_SECRET,
         options
     );
     return refreshToken;
@@ -111,7 +119,7 @@ export const generateRandomToken = (length: number = 32): string => {
  * @param userId - User ID
  * @returns JWT token for password reset
  */
-export const generatePasswordResetToken = (userId: number): string => {
+export const generatePasswordResetToken = (userId: string): string => {
     const token = jwt.sign(
         { userId, type: 'password_reset' },
         process.env.JWT_SECRET as string,
@@ -125,7 +133,7 @@ export const generatePasswordResetToken = (userId: number): string => {
  * @param userId - User ID
  * @returns JWT token for email verification
  */
-export const generateEmailVerificationToken = (userId: number): string => {
+export const generateEmailVerificationToken = (userId: string): string => {
     const token = jwt.sign(
         { userId, type: 'email_verification' },
         process.env.JWT_SECRET as string,

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { departmentService } from "../../api/departments.api";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
@@ -7,58 +8,19 @@ import Badge from "../../components/ui/badge/Badge";
 import { PencilIcon, TrashBinIcon } from "../../icons";
 
 interface Department {
-  id: number;
-  name: string;
-  manager: string;
-  employeeCount: number;
-  description: string;
-  status: string;
+    departmentId: number;
+    name: string;
+    description: string | null;
+    managerId: number | null;
+    managerName: string | null;  
+    employeeCount: number;        
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export default function DepartmentList() {
-  const [departments] = useState<Department[]>([
-    {
-      id: 1,
-      name: "Phát triển phần mềm",
-      manager: "Nguyễn Văn A",
-      employeeCount: 45,
-      description: "Phòng phát triển và bảo trì các sản phẩm phần mềm",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Nhân sự",
-      manager: "Trần Thị B",
-      employeeCount: 8,
-      description: "Quản lý nhân sự, tuyển dụng và đào tạo",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Kế toán",
-      manager: "Lê Văn C",
-      employeeCount: 12,
-      description: "Quản lý tài chính và kế toán công ty",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "Marketing",
-      manager: "Phạm Thị D",
-      employeeCount: 18,
-      description: "Tiếp thị và quảng bá sản phẩm",
-      status: "Active",
-    },
-    {
-      id: 5,
-      name: "Kinh doanh",
-      manager: "Hoàng Văn E",
-      employeeCount: 22,
-      description: "Phát triển khách hàng và chăm sóc khách hàng",
-      status: "Active",
-    },
-  ]);
-
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -66,12 +28,28 @@ export default function DepartmentList() {
     description: "",
   });
 
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const data = await departmentService.getAllDepartments();
+        setDepartments(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setDepartments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDepartments();
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form data:", formData);
     setShowModal(false);
     // TODO: Call API to create department
   };
+
+  if (loading) return <div>Đang tải danh sách phòng ban...</div>;
 
   return (
     <>
@@ -97,7 +75,7 @@ export default function DepartmentList() {
               Tổng nhân viên
             </p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {departments.reduce((sum, dept) => sum + dept.employeeCount, 0)}
+              {departments?.reduce((sum, dept) => sum + dept.employeeCount, 0)}
             </p>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -106,7 +84,7 @@ export default function DepartmentList() {
             </p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">
               {Math.round(
-                departments.reduce((sum, dept) => sum + dept.employeeCount, 0) /
+                departments?.reduce((sum, dept) => sum + dept.employeeCount, 0) /
                   departments.length
               )}
             </p>
@@ -117,9 +95,11 @@ export default function DepartmentList() {
             </p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">
               {
-                departments.reduce((max, dept) =>
-                  dept.employeeCount > max.employeeCount ? dept : max
-                ).name
+                departments?.reduce(
+                  (max, dept) =>
+                    dept.employeeCount > max.employeeCount ? dept : max,
+                  departments[0]
+                )?.name ?? "Không có phòng ban"
               }
             </p>
           </div>
@@ -188,14 +168,14 @@ export default function DepartmentList() {
                 <TableBody>
                   {departments.map((dept) => (
                     <TableRow
-                      key={dept.id}
+                      key={dept.departmentId}
                       className="border-b border-gray-100 last:border-0 dark:border-white/[0.05]"
                     >
                       <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
                         {dept.name}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {dept.manager}
+                        {dept.managerName}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
                         {dept.employeeCount} người

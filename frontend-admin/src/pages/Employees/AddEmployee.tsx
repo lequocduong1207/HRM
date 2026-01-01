@@ -2,34 +2,82 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { useState } from "react";
+import { departmentService } from "../../api/departments.api.js";
 
 export default function AddEmployee() {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    dateOfBirth: "",
-    gender: "male",
-    address: "",
-    city: "",
-    country: "Vietnam",
-    department: "",
-    position: "",
-    joinDate: "",
-    salary: "",
-    employeeType: "fulltime",
-    // Account fields
-    createAccount: true,
-    username: "",
-    password: "",
-    role: "employee",
-  });
+  interface Employee {
+    employeeId: string;
+    fullName: string;
+    dob: Date | null;
+    gender: "Male" | "Female" | "Other" | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    nationalId: string | null;         
+    departmentId: number | null;
+    position: string | null;
+    hireDate: Date | null;
+    employmentStatus: 'active' | 'inactive' | 'terminated' | 'resigned';
+    createdAt: Date;
+    updatedAt: Date;
+  }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  interface Department {
+    departmentId: number;
+    name: string;
+    description: string | null;
+    managerId: number | null;
+    managerName: string | null;  
+    employeeCount: number;        
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+  const [formData, setFormData] = useState<Partial<Employee>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+      // Lấy danh sách phòng ban từ API khi mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await departmentService.getAllDepartments();
+        if (!Array.isArray(res)) throw new Error("Không lấy được danh sách phòng ban");
+        setDepartments(res);
+      } catch (err) {
+        setDepartments([]);
+      }
+    };
+    fetchDepartments();
+  }, []);
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form data:", formData);
-    // TODO: Call API to create employee
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await fetch("/api/employees", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Đã xảy ra lỗi khi thêm nhân viên.");
+      }
+
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (
@@ -49,42 +97,42 @@ export default function AddEmployee() {
       />
       <PageBreadcrumb pageTitle="Thêm nhân viên mới" />
 
+      {/* Hiển thị trạng thái loading, error, success */}
+      {loading && (
+        <div className="mb-4 rounded bg-blue-100 px-4 py-2 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+          Đang xử lý, vui lòng chờ...
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 rounded bg-red-100 px-4 py-2 text-red-700 dark:bg-red-900/40 dark:text-red-200">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 rounded bg-green-100 px-4 py-2 text-green-700 dark:bg-green-900/40 dark:text-green-200">
+          Thêm nhân viên thành công!
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           {/* Thông tin cá nhân */}
           <ComponentCard title="Thông tin cá nhân" desc="Thông tin cơ bản của nhân viên">
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div>
                   <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                    Họ <span className="text-red-500">*</span>
+                    Họ và tên <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    name="firstName"
-                    value={formData.firstName}
+                    name="fullName"
+                    value={formData.fullName ?? ""}
                     onChange={handleChange}
                     required
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder="Nhập họ"
+                    placeholder="Nhập họ và tên"
                   />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                    Tên <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder="Nhập tên"
-                  />
-                </div>
               </div>
-
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
                   Email <span className="text-red-500">*</span>
@@ -92,7 +140,7 @@ export default function AddEmployee() {
                 <input
                   type="email"
                   name="email"
-                  value={formData.email}
+                  value={formData.email ?? ""} 
                   onChange={handleChange}
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -107,7 +155,7 @@ export default function AddEmployee() {
                 <input
                   type="tel"
                   name="phone"
-                  value={formData.phone}
+                  value={formData.phone ?? ""}
                   onChange={handleChange}
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -122,8 +170,8 @@ export default function AddEmployee() {
                   </label>
                   <input
                     type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
+                    name="dob"
+                    value={formData.dob ? ""}
                     onChange={handleChange}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   />
@@ -134,7 +182,7 @@ export default function AddEmployee() {
                   </label>
                   <select
                     name="gender"
-                    value={formData.gender}
+                    value={formData.gender ?? ""}
                     onChange={handleChange}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   >
@@ -151,41 +199,12 @@ export default function AddEmployee() {
                 </label>
                 <textarea
                   name="address"
-                  value={formData.address}
+                  value={formData.address ?? ""}
                   onChange={handleChange}
                   rows={3}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Nhập địa chỉ"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                    Thành phố
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder="Hồ Chí Minh"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                    Quốc gia
-                  </label>
-                  <input
-                    type="text"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder="Vietnam"
-                  />
-                </div>
               </div>
             </div>
           </ComponentCard>
@@ -196,26 +215,32 @@ export default function AddEmployee() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
                   Phòng ban <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                >
-                  <option value="">Chọn phòng ban</option>
-                  <option value="IT">Phát triển phần mềm</option>
-                  <option value="HR">Nhân sự</option>
-                  <option value="Accounting">Kế toán</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Sales">Kinh doanh</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                  Chức vụ <span className="text-red-500">*</span>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                    Phòng ban <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="departmentId"
+                    value={formData.departmentId ?? ""}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        departmentId: e.target.value ? Number(e.target.value) : null
+                      })
+                    }
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="">Chọn phòng ban</option>
+                    {departments.map(dep => (
+                      <option key={dep.departmentId} value={dep.departmentId}>{dep.name}</option>
+                    ))}
+                  </select>
+                      <option value="">Chọn phòng ban</option>
+                      {departments.map(dep => (
+                        <option key={dep.id} value={dep.id}>{dep.name}</option>
+                      ))}
+                    </select>
                 </label>
                 <input
                   type="text"

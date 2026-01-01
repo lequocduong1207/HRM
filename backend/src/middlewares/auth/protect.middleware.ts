@@ -4,8 +4,8 @@ import { AppError } from '../error/error-handler.middleware.js';
 import { asyncHandler } from '../error/async-handler.middleware.js';
 
 interface JwtPayload {
-    userId: number;
-    username: string;
+    userId: string;  // MongoDB _id as string
+    email: string;
     role: string;
 }
 

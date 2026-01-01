@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
@@ -6,82 +6,69 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../compon
 import Badge from "../../components/ui/badge/Badge";
 import { PencilIcon, TrashBinIcon, EyeIcon } from "../../icons";
 import { Link } from "react-router";
+import { employeeService } from "../../api/employees.api";
 
 interface Employee {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  department: string;
-  position: string;
-  status: string;
-  joinDate: string;
-  role?: string;
-  hasAccount?: boolean;
+   employeeId: string;
+    fullName: string;
+    dob: Date | null;
+    gender: "Male" | "Female" | "Other" | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    nationalId: string | null;         
+    departmentId: number | null;
+    position: string | null;
+    hireDate: Date | null;
+    employmentStatus: 'active' | 'inactive' | 'terminated' | 'resigned';
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export default function EmployeeList() {
-  const [employees] = useState<Employee[]>([
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@company.com",
-      phone: "0901234567",
-      department: "Phát triển phần mềm",
-      position: "Senior Developer",
-      status: "Active",
-      joinDate: "01/01/2023",
-      role: "admin",
-      hasAccount: true,
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      email: "tranthib@company.com",
-      phone: "0907654321",
-      department: "Nhân sự",
-      position: "HR Manager",
-      status: "Active",
-      joinDate: "15/03/2023",
-      role: "manager",
-      hasAccount: true,
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      email: "levanc@company.com",
-      phone: "0912345678",
-      department: "Kế toán",
-      position: "Accountant",
-      status: "Active",
-      joinDate: "10/02/2023",
-      role: "employee",
-      hasAccount: true,
-    },
-    {
-      id: 4,
-      name: "Phạm Thị D",
-      email: "phamthid@company.com",
-      phone: "0923456789",
-      department: "Marketing",
-      position: "Marketing Specialist",
-      status: "On Leave",
-      joinDate: "20/04/2023",
-      role: "employee",
-      hasAccount: true,
-    },
-    {
-      id: 5,
-      name: "Hoàng Văn E",
-      email: "hoangvane@company.com",
-      phone: "0934567890",
-      department: "Phát triển phần mềm",
-      position: "Junior Developer",
-      status: "Active",
-      joinDate: "05/06/2023",
-      hasAccount: false,
-    },
-  ]);
+  const formatDateVN = (date: Date) =>
+  date ? new Date(date).toLocaleDateString('vi-VN') : '';
+
+
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const data = await employeeService.getAllEmployees();
+        // Đảm bảo dữ liệu đúng định dạng
+        setEmployees(
+          Array.isArray(data)
+            ? data.map((item) => ({
+                ...item,
+                employeeId: item.employeeId?.toString() ?? "",
+                fullName: item.fullName ?? "",
+                dob: item.dob ? new Date(item.dob) : null,
+                gender: item.gender ?? null,
+                email: item.email ?? null,
+                phone: item.phone ?? null,
+                address: item.address ?? null,
+                nationalId: item.nationalId ?? null,
+                departmentId: item.departmentId ?? null,
+                position: item.position ?? null,
+                hireDate: item.hireDate ? new Date(item.hireDate) : null,
+                employmentStatus: item.employmentStatus ?? 'active',
+                createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+                updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+              }))
+            : []
+        );
+      } catch (error) {
+        setEmployees([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEmployees();
+  }, []);
+
+  if (loading) return <div>Đang tải danh sách nhân viên...</div>;
 
   return (
     <>
@@ -147,62 +134,50 @@ export default function EmployeeList() {
                 </TableHeader>
                 <TableBody>
                   {employees.map((employee) => (
-                    <TableRow key={employee.id} className="border-b border-gray-100 last:border-0 dark:border-white/[0.05]">
+                    <TableRow key={employee.employeeId} className="border-b border-gray-100 last:border-0 dark:border-white/[0.05]">
                       <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                        #{employee.id.toString().padStart(4, '0')}
+                        #{employee.employeeId.toString().padStart(4, '0')}
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {employee.name}
+                          {employee.fullName}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Ngày vào: {employee.joinDate}
+                          Ngày vào: {formatDateVN(employee.createdAt)}
                         </div>
                       </TableCell>
                       <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
                         {employee.email}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {employee.position}
+                      </TableCell>
+                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
                         {employee.phone}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {employee.department}
+                        {employee.departmentId}
                       </TableCell>
                       <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {employee.hasAccount ? (
-                          <Badge
-                            color={
-                              employee.role === "admin"
-                                ? "error"
-                                : employee.role === "manager"
-                                ? "warning"
-                                : "info"
-                            }
-                          >
-                            {employee.role === "admin"
-                              ? "Admin"
-                              : employee.role === "manager"
-                              ? "Manager"
-                              : "Employee"}
-                          </Badge>
-                        ) : (
-                          <Badge color="light">Chưa có tài khoản</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="px-5 py-4">
                         {employee.position}
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         <Badge
                           color={
-                            employee.status === "Active"
+                            employee.employmentStatus === "active"
                               ? "success"
-                              : employee.status === "On Leave"
+                              : employee.employmentStatus === "inactive"
                               ? "warning"
                               : "error"
                           }
                         >
-                          {employee.status === "Active" ? "Đang làm việc" : "Đang nghỉ"}
+                          {employee.employmentStatus === "active"
+                            ? "Đang làm việc"
+                            : employee.employmentStatus === "inactive"
+                            ? "Tạm nghỉ"
+                            : employee.employmentStatus === "terminated"
+                            ? "Đã nghỉ việc"
+                            : "Đã thôi việc"}
                         </Badge>
                       </TableCell>
                       <TableCell className="px-5 py-4">

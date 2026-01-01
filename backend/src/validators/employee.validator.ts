@@ -13,6 +13,20 @@ export const createEmployeeSchema = {
                 'any.required': 'Full name is required',
                 'string.min': 'Full name must be at least 2 characters'
             }),
+         dob: Joi.date()
+            .required()
+            .max('now')
+            .messages({
+                'any.required': 'Dob is required',
+                'date.max': 'Invalid dob'
+            }), 
+        gender: Joi.string()
+            .required()
+            .valid('Male', 'Female', 'Other')
+            .messages({
+                'any.required': 'Gender is required',
+                'any.only': 'Gender must be Male, Female, or Other'
+            }),   
         email: Joi.string()
             .required()
             .email()
@@ -27,25 +41,17 @@ export const createEmployeeSchema = {
                 'any.required': 'Phone is required',
                 'string.pattern.base': 'Phone must be 10-11 digits'
             }),
-        dateOfBirth: Joi.date()
-            .required()
-            .max('now')
-            .messages({
-                'any.required': 'Date of birth is required',
-                'date.max': 'Invalid date of birth'
-            }),
-        gender: Joi.string()
-            .required()
-            .valid('Male', 'Female', 'Other')
-            .messages({
-                'any.required': 'Gender is required',
-                'any.only': 'Gender must be Male, Female, or Other'
-            }),
         address: Joi.string()
             .required()
             .max(200)
             .messages({
                 'any.required': 'Address is required'
+            }),
+        nationalId: Joi.string()
+            .required()
+            .max(20)
+            .messages({
+                'any.required': 'National ID is required'
             }),
         departmentId: Joi.number()
             .required()
@@ -72,7 +78,7 @@ export const createEmployeeSchema = {
                 'any.required': 'Salary is required',
                 'number.min': 'Salary must be positive'
             }),
-        status: Joi.string()
+        employeeStatus: Joi.string()
             .optional()
             .valid('Active', 'Inactive', 'On Leave')
             .default('Active')
@@ -94,15 +100,16 @@ export const updateEmployeeSchema = {
     }),
     body: Joi.object({
         fullName: Joi.string().optional().min(2).max(100),
+        dob: Joi.date().optional().max('now'),
+        gender: Joi.string().optional().valid('Male', 'Female', 'Other'),
         email: Joi.string().optional().email(),
         phone: Joi.string().optional().pattern(/^[0-9]{10,11}$/),
-        dateOfBirth: Joi.date().optional().max('now'),
-        gender: Joi.string().optional().valid('Male', 'Female', 'Other'),
         address: Joi.string().optional().max(200),
+        nationalId: Joi.string().optional().max(20),
         departmentId: Joi.number().optional().positive(),
         position: Joi.string().optional().max(100),
         salary: Joi.number().optional().min(0),
-        status: Joi.string().optional().valid('Active', 'Inactive', 'On Leave')
+        employeeStatus: Joi.string().optional().valid('Active', 'Inactive', 'On Leave')
     }).min(1).messages({
         'object.min': 'At least one field must be provided'
     })
