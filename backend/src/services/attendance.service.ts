@@ -11,7 +11,7 @@ export class AttendanceService {
     /**
      * Check in
      */
-    async checkIn(userId: number, data: { location?: string; notes?: string }) {
+    async checkIn(userId: string, data: { location?: string; notes?: string }) {
         // Kiểm tra đã check-in hôm nay chưa
         const today = await this.attendanceRepository.getTodayAttendance(userId);
         if (today && today.checkIn) {
@@ -25,7 +25,7 @@ export class AttendanceService {
     /**
      * Check out
      */
-    async checkOut(userId: number, data: { location?: string; notes?: string }) {
+    async checkOut(userId: string, data: { location?: string; notes?: string }) {
         // Kiểm tra đã check-in chưa
         const today = await this.attendanceRepository.getTodayAttendance(userId);
         if (!today || !today.checkIn) {
@@ -43,14 +43,14 @@ export class AttendanceService {
     /**
      * Lấy lịch sử chấm công của user
      */
-    async getMyAttendances(userId: number, options: any) {
+    async getMyAttendances(userId: string, options: any) {
         return await this.attendanceRepository.findByUserId(userId, options);
     }
 
     /**
      * Kiểm tra trạng thái chấm công hôm nay
      */
-    async getTodayAttendance(userId: number) {
+    async getTodayAttendance(userId: string) {
         return await this.attendanceRepository.getTodayAttendance(userId);
     }
 

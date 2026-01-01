@@ -14,15 +14,13 @@ import {
 const authRepo = new AuthRepository();
 
 interface RegisterData {
-    username: string;
-    password: string;
     email: string;
+    password: string;
     fullName: string;
 }
 
 interface UserData {
-    userId: number;
-    username: string;
+    userId: string;  // MongoDB _id as string
     email: string;
     fullName: string;
     role: string;
@@ -44,46 +42,38 @@ export const register = async (data: RegisterData): Promise<LoginResult> => {
         throw new AppError('Email already exists', 409);
     }
 
-    // Check if username exists
-    const usernameExists = await authRepo.usernameExists(data.username);
-    if (usernameExists) {
-        throw new AppError('Username already exists', 409);
-    }
-
     // Hash password
     const hashedPassword = await hashPassword(data.password);
 
     // Create user
     const user = await authRepo.createUser({
-        username: data.username,
-        password: hashedPassword,
         email: data.email,
+        password: hashedPassword,
         fullName: data.fullName,
         role: 'employee'
     });
 
     // Generate tokens
     const token = generateToken({
-        userId: user.userId,
-        username: user.username,
+        userId: user._id.toString(),
+        email: user.email,
         role: user.role
     });
 
     const refreshToken = generateRefreshToken({
-        userId: user.userId,
-        username: user.username,
+        userId: user._id.toString(),
+        email: user.email,
         role: user.role
     });
 
     // Generate email verification token
-    const verificationToken = generateEmailVerificationToken(user.userId);
+    const verificationToken = generateEmailVerificationToken(user._id.toString());
     // TODO: Send verification email
     console.log(`Verification token for ${user.email}: ${verificationToken}`);
 
     return {
         user: {
-            userId: user.userId,
-            username: user.username,
+            userId: user._id.toString(),
             email: user.email,
             fullName: user.fullName,
             role: user.role
@@ -109,31 +99,33 @@ export const login = async (email: string, password: string): Promise<LoginResul
     }
 
     // Verify password
+    if (!user.passwordHash) {
+        throw new AppError('Invalid user account', 500);
+    }
     const isPasswordValid = await comparePassword(password, user.passwordHash);
     if (!isPasswordValid) {
         throw new AppError('Invalid email or password', 401);
     }
 
     // Update last login
-    await authRepo.updateLastLogin(user.userId);
+    await authRepo.updateLastLogin(user._id.toString());
 
     // Generate tokens
     const token = generateToken({
-        userId: user.userId,
-        username: user.username,
+        userId: user._id.toString(),
+        email: user.email,
         role: user.role
     });
 
     const refreshToken = generateRefreshToken({
-        userId: user.userId,
-        username: user.username,
+        userId: user._id.toString(),
+        email: user.email,
         role: user.role
     });
 
     return {
         user: {
-            userId: user.userId,
-            username: user.username,
+            userId: user._id.toString(),
             email: user.email,
             fullName: user.fullName,
             role: user.role
@@ -144,11 +136,11 @@ export const login = async (email: string, password: string): Promise<LoginResul
 };
 
 /**
- * Login with email OR username (FLEXIBLE)
+ * Login with email (FLEXIBLE)
  */
 export const loginFlexible = async (identifier: string, password: string): Promise<LoginResult> => {
-    // Find user by email or username
-    const user = await authRepo.findByEmailOrUsername(identifier);
+    // Find user by email
+    const user = await authRepo.findByEmail(identifier);
     if (!user) {
         throw new AppError('Invalid credentials', 401);
     }
@@ -159,31 +151,33 @@ export const loginFlexible = async (identifier: string, password: string): Promi
     }
 
     // Verify password
+    if (!user.passwordHash) {
+        throw new AppError('Invalid user account', 500);
+    }
     const isPasswordValid = await comparePassword(password, user.passwordHash);
     if (!isPasswordValid) {
         throw new AppError('Invalid credentials', 401);
     }
 
     // Update last login
-    await authRepo.updateLastLogin(user.userId);
+    await authRepo.updateLastLogin(user._id.toString());
 
     // Generate tokens
     const token = generateToken({
-        userId: user.userId,
-        username: user.username,
+        userId: user._id.toString(),
+        email: user.email,
         role: user.role
     });
 
     const refreshToken = generateRefreshToken({
-        userId: user.userId,
-        username: user.username,
+        userId: user._id.toString(),
+        email: user.email,
         role: user.role
     });
 
     return {
         user: {
-            userId: user.userId,
-            username: user.username,
+            userId: user._id.toString(),
             email: user.email,
             fullName: user.fullName,
             role: user.role
@@ -196,7 +190,7 @@ export const loginFlexible = async (identifier: string, password: string): Promi
 /**
  * Get user by ID
  */
-export const getUserById = async (userId: number): Promise<UserData | null> => {
+export const getUserById = async (userId: string): Promise<UserData | null> => {
     const user = await authRepo.findById(userId);
     
     if (!user) {
@@ -204,8 +198,7 @@ export const getUserById = async (userId: number): Promise<UserData | null> => {
     }
 
     return {
-        userId: user.userId,
-        username: user.username,
+        userId: user._id.toString(),
         email: user.email,
         fullName: user.fullName,
         role: user.role
@@ -216,7 +209,7 @@ export const getUserById = async (userId: number): Promise<UserData | null> => {
  * Change password
  */
 export const changePassword = async (
-    userId: number,
+    userId: string,
     currentPassword: string,
     newPassword: string
 ): Promise<void> => {
@@ -227,6 +220,9 @@ export const changePassword = async (
     }
 
     // Verify current password
+    if (!user.passwordHash) {
+        throw new AppError('Invalid user account', 500);
+    }
     const isPasswordValid = await comparePassword(currentPassword, user.passwordHash);
     if (!isPasswordValid) {
         throw new AppError('Current password is incorrect', 401);
@@ -250,10 +246,10 @@ export const forgotPassword = async (email: string): Promise<void> => {
     }
 
     // Generate reset token
-    const resetToken = generatePasswordResetToken(user.UserId);
+    const resetToken = generatePasswordResetToken(user._id.toString());
 
     // Save reset token to database
-    await authRepo.saveResetToken(user.UserId, resetToken);
+    await authRepo.saveResetToken(user._id.toString(), resetToken);
 
     // TODO: Send email with reset link
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
@@ -307,31 +303,11 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ token:
     // Generate new access token
     const token = generateToken({
         userId: decoded.userId,
-        username: decoded.username,
+        email: decoded.email,
         role: decoded.role
     });
 
     return { token };
-};
-
-/**
- * Verify email
- */
-export const verifyEmail = async (token: string): Promise<void> => {
-    // Verify token
-    let decoded;
-    try {
-        decoded = verifyToken(token);
-    } catch (error) {
-        throw new AppError('Invalid verification token', 400);
-    }
-
-    if (!decoded.userId || decoded.type !== 'email_verification') {
-        throw new AppError('Invalid token type', 400);
-    }
-
-    // Update email verified status
-    await authRepo.verifyEmail(decoded.userId);
 };
 
 /**
@@ -343,12 +319,12 @@ export const resendVerificationEmail = async (email: string): Promise<void> => {
         return;
     }
 
-    if (user.EmailVerified) {
+    if (user.emailVerified) {
         throw new AppError('Email already verified', 400);
     }
 
     // Generate verification token
-    const verificationToken = generateEmailVerificationToken(user.UserId);
+    const verificationToken = generateEmailVerificationToken(user._id.toString());
 
     // TODO: Send verification email
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
@@ -359,10 +335,25 @@ export const resendVerificationEmail = async (email: string): Promise<void> => {
  * Update user profile
  */
 export const updateProfile = async (
-    userId: number,
+    userId: string,
     data: { fullName?: string; phone?: string }
-) => {
-    // Implementation
+): Promise<UserData> => {
+    const user = await authRepo.findById(userId);
+    if (!user) {
+        throw new AppError('User not found', 404);
+    }
+
+    const updatedUser = await authRepo.updateProfile(userId, data);
+    if (!updatedUser) {
+        throw new AppError('Failed to update profile', 500);
+    }
+
+    return {
+        userId: updatedUser._id.toString(),
+        email: updatedUser.email,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role
+    };
 };
 
 /**
@@ -373,8 +364,39 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
 };
 
 /**
- * Check if username exists
+ * Verify email with token
+ */
+export const verifyEmail = async (token: string): Promise<void> => {
+    // Verify token
+    let decoded;
+    try {
+        decoded = verifyToken(token);
+    } catch (error) {
+        throw new AppError('Invalid or expired verification token', 400);
+    }
+
+    if (!decoded.userId || decoded.type !== 'email_verification') {
+        throw new AppError('Invalid token type', 400);
+    }
+
+    // Find user and update emailVerified
+    const user = await authRepo.findById(decoded.userId);
+    if (!user) {
+        throw new AppError('User not found', 404);
+    }
+
+    if (user.emailVerified) {
+        throw new AppError('Email already verified', 400);
+    }
+
+    // Update email verified status
+    await authRepo.updateProfile(decoded.userId, { emailVerified: true } as any);
+};
+
+/**
+ * Check if username exists (placeholder - not used in email-only system)
  */
 export const checkUsernameExists = async (username: string): Promise<boolean> => {
-    return await authRepo.usernameExists(username);
+    // This system uses email-only authentication
+    return false;
 };

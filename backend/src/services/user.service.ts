@@ -1,4 +1,6 @@
 import bcrypt from 'bcryptjs';
+import { Types } from 'mongoose';
+import { UserRole } from '../models/user.model.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { EmployeeRepository } from '../repositories/employee.repository.js';
 import { AppError } from '../middlewares/error/error-handler.middleware.js';
@@ -18,8 +20,9 @@ export class UserService {
     async createUser(data: {
         email: string;
         password: string;
+        fullName: string;
         role: string;
-        employeeId?: number;
+        employeeId?: string;
     }) {
         // Validate
         if (!data.email || !data.password) {
@@ -32,27 +35,22 @@ export class UserService {
             throw new AppError('Invalid email format', 400);
         }
 
-        if (!['admin', 'user'].includes(data.role)) {
-            throw new AppError('Invalid role. Must be admin or user', 400);
-        }
-
         // Kiểm tra email đã tồn tại
         const exists = await this.userRepository.checkEmailExists(data.email);
         if (exists) {
             throw new AppError('Email already exists', 400);
         }
 
-        // Nếu có employeeId, kiểm tra employee có tồn tại không và lấy thông tin
-        let employee = null;
+        // Nếu có employeeId, kiểm tra employee có tồn tại không
         if (data.employeeId) {
-            employee = await this.employeeRepository.findById(data.employeeId);
+            const employee = await this.employeeRepository.findById(data.employeeId);
             if (!employee) {
                 throw new AppError('Employee not found', 404);
             }
-            
-            // Kiểm tra employee đã có user chưa
-            const existingUser = await this.userRepository.findByEmployeeId(data.employeeId);
-            if (existingUser) {
+
+            // Kiểm tra employee đã có user khác chưa
+            const existingUserWithEmployee = await this.userRepository.findByEmployeeId(data.employeeId);
+            if (existingUserWithEmployee) {
                 throw new AppError('Employee already has a user account', 400);
             }
         }
@@ -60,16 +58,13 @@ export class UserService {
         // Hash password
         const passwordHash = await bcrypt.hash(data.password, 10);
 
-        // Tạo username từ email (phần trước @)
-        const username = data.email.split('@')[0];
-
         // Tạo user
-        const user = await this.userRepository.create({
-            username,
+        const user = await this.userRepository.createUser({
             email: data.email,
             passwordHash,
-            role: data.role,
-            employeeId: data.employeeId
+            fullName: data.fullName,
+            role: data.role as UserRole,
+            employeeId: data.employeeId ? new Types.ObjectId(data.employeeId) : undefined
         });
 
         return user.toJSON();
@@ -78,19 +73,16 @@ export class UserService {
     /**
      * Lấy tất cả users
      */
-    async getAllUsers() {
-        const result = await this.userRepository.findAll();
+    async getAllUsers(options?: { page?: number; limit?: number }) {
+        const result = await this.userRepository.findAll(options);
         
-        return {
-            data: result.data.map(user => user.toJSON()),
-            pagination: result.pagination
-        };
+        return result;
     }
 
     /**
      * Lấy user theo ID
      */
-    async getUserById(userId: number) {
+    async getUserById(userId: string) {
         const user = await this.userRepository.findById(userId);
         if (!user) {
             throw new AppError('User not found', 404);
@@ -101,11 +93,12 @@ export class UserService {
     /**
      * Cập nhật user
      */
-    async updateUser(userId: number, data: {
+    async updateUser(userId: string, data: {
         email?: string;
         password?: string;
+        fullName?: string;
         role?: string;
-        employeeId?: number;
+        employeeId?: string;
     }) {
         // Kiểm tra user tồn tại
         const existingUser = await this.userRepository.findById(userId);
@@ -114,7 +107,7 @@ export class UserService {
         }
 
         // Kiểm tra email mới
-        if (data.email) {
+        if (data.email && data.email !== existingUser.email) {
             // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(data.email)) {
@@ -127,11 +120,6 @@ export class UserService {
             }
         }
 
-        // Validate role
-        if (data.role && !['admin', 'user'].includes(data.role)) {
-            throw new AppError('Invalid role. Must be admin or user', 400);
-        }
-
         // Kiểm tra employeeId
         if (data.employeeId) {
             const employee = await this.employeeRepository.findById(data.employeeId);
@@ -141,7 +129,7 @@ export class UserService {
 
             // Kiểm tra employee đã có user khác chưa
             const existingUserWithEmployee = await this.userRepository.findByEmployeeId(data.employeeId);
-            if (existingUserWithEmployee && existingUserWithEmployee.userId !== userId) {
+            if (existingUserWithEmployee && existingUserWithEmployee._id.toString() !== userId.toString()) {
                 throw new AppError('Employee already has another user account', 400);
             }
         }
@@ -152,19 +140,16 @@ export class UserService {
             passwordHash = await bcrypt.hash(data.password, 10);
         }
 
-        // Nếu có email mới, tạo username mới từ email
-        let username;
-        if (data.email) {
-            username = data.email.split('@')[0];
+        const updateData: Partial<typeof existingUser> = {};
+        if (data.email) updateData.email = data.email;
+        if (passwordHash) updateData.passwordHash = passwordHash;
+        if (data.fullName) updateData.fullName = data.fullName;
+        if (data.role) updateData.role = data.role as UserRole;
+        if (data.employeeId !== undefined) {
+            updateData.employeeId = data.employeeId ? new Types.ObjectId(data.employeeId) : undefined;
         }
 
-        const user = await this.userRepository.update(userId, {
-            username,
-            email: data.email,
-            passwordHash,
-            role: data.role,
-            employeeId: data.employeeId
-        });
+        const user = await this.userRepository.updateUser(userId, updateData);
 
         return user?.toJSON();
     }
@@ -172,18 +157,13 @@ export class UserService {
     /**
      * Xóa user
      */
-    async deleteUser(userId: number) {
+    async deleteUser(userId: string) {
         const user = await this.userRepository.findById(userId);
         if (!user) {
             throw new AppError('User not found', 404);
         }
 
-        // Không cho phép xóa chính mình (optional - tùy logic)
-        // if (userId === req.user.userId) {
-        //     throw new AppError('Cannot delete your own account', 400);
-        // }
-
-        await this.userRepository.delete(userId);
+        await this.userRepository.deleteUser(userId);
         return { message: 'User deleted successfully' };
     }
 }
