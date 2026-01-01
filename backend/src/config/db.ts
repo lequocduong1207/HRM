@@ -1,25 +1,9 @@
-import sql from "mssql";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
-
-dotenv.config();
-
-const dbConfig = {
-  user: process.env.DB_USER as string,
-  password: process.env.DB_PASSWORD as string,
-  server: process.env.DB_HOST as string,
-  database: process.env.DB_NAME as string,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true,
-  },
-};
-
-const pool = new sql.ConnectionPool(dbConfig);
-const poolConnect = pool.connect(); 
 
 export async function checkConnection() {
   try {
-    const conn = await sql.connect(dbConfig);
+    const conn = await mongoose.connect(process.env.MONGO_URI as string);
     console.log("✅ Kết nối SQL Server thành công!");
     return conn;
   } catch (err) {
@@ -27,5 +11,3 @@ export async function checkConnection() {
     throw err;
   }
 }
-
-export { sql, pool, poolConnect };
