@@ -830,44 +830,6 @@
         ]
       }
     },
-    "/employees/birthdays": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Sinh nhật nhân viên",
-        "description": "Lấy danh sách nhân viên có sinh nhật trong tháng",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/work-anniversaries": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Kỷ niệm làm việc",
-        "description": "Lấy danh sách kỷ niệm làm việc sắp tới",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
     "/employees/search": {
       "get": {
         "tags": [
@@ -2448,11 +2410,11 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   }
                 }
               },
@@ -2612,7 +2574,7 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   }
                 }
               },
@@ -2673,7 +2635,7 @@
           "required": {
             "type": "array",
             "example": [
-              "employmentStatus"
+              "isActive"
             ],
             "items": {
               "type": "string"
@@ -2682,28 +2644,20 @@
           "properties": {
             "type": "object",
             "properties": {
-              "employmentStatus": {
+              "isActive": {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "string"
-                  },
-                  "enum": {
-                    "type": "array",
-                    "example": [
-                      "active",
-                      "inactive",
-                      "terminated",
-                      "resigned"
-                    ],
-                    "items": {
-                      "type": "string"
-                    }
+                    "example": "boolean"
                   },
                   "example": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "description": {
                     "type": "string",
-                    "example": "active"
+                    "example": "Active status (true/false)"
                   }
                 }
               }
@@ -2721,16 +2675,16 @@
           "properties": {
             "type": "object",
             "properties": {
-              "employeeId": {
+              "_id": {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   }
                 }
               },
@@ -2849,11 +2803,11 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439012"
                   }
                 }
               },
@@ -2922,6 +2876,19 @@
                   "example": {
                     "type": "string",
                     "example": "active"
+                  }
+                }
+              },
+              "isActive": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "boolean"
+                  },
+                  "example": {
+                    "type": "boolean",
+                    "example": true
                   }
                 }
               },
@@ -3034,11 +3001,11 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   }
                 }
               }
@@ -3102,7 +3069,7 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   }
                 }
               }
@@ -3120,16 +3087,16 @@
           "properties": {
             "type": "object",
             "properties": {
-              "userId": {
+              "_id": {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   }
                 }
               },
@@ -3191,11 +3158,11 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439012"
                   }
                 }
               },
@@ -3401,16 +3368,16 @@
           "properties": {
             "type": "object",
             "properties": {
-              "attendanceId": {
+              "_id": {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   }
                 }
               },
@@ -3419,11 +3386,11 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439012"
                   }
                 }
               },
@@ -3617,15 +3584,15 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 5
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   },
                   "description": {
                     "type": "string",
-                    "example": "ID nhân viên làm trưởng phòng"
+                    "example": "ID nhân viên làm trưởng phòng (MongoDB ObjectId)"
                   }
                 }
               }
@@ -3682,15 +3649,15 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 10
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439012"
                   },
                   "description": {
                     "type": "string",
-                    "example": "ID nhân viên làm trưởng phòng"
+                    "example": "ID nhân viên làm trưởng phòng (MongoDB ObjectId)"
                   }
                 }
               }
@@ -3708,16 +3675,16 @@
           "properties": {
             "type": "object",
             "properties": {
-              "departmentId": {
+              "_id": {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   }
                 }
               },
@@ -3752,11 +3719,11 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "integer"
+                    "example": "string"
                   },
                   "example": {
-                    "type": "number",
-                    "example": 5
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439012"
                   }
                 }
               },
@@ -4347,7 +4314,7 @@
             "in": "query",
             "name": "departmentId",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
             "description": "Filter by department ID"
           },
@@ -4483,8 +4450,8 @@
                     "example": "001234567890"
                   },
                   "departmentId": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   },
                   "position": {
                     "type": "string",
@@ -4567,9 +4534,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Employee ID"
+            "description": "Employee ID (MongoDB ObjectId)"
           }
         ],
         "requestBody": {
@@ -4608,7 +4575,7 @@
                     "type": "string"
                   },
                   "departmentId": {
-                    "type": "integer"
+                    "type": "string"
                   },
                   "position": {
                     "type": "string"
@@ -4645,7 +4612,7 @@
           "Employees"
         ],
         "summary": "Update employment status",
-        "description": "Update employee employment status",
+        "description": "Update employee active status",
         "security": [
           {
             "bearerAuth": []
@@ -4657,9 +4624,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Employee ID"
+            "description": "Employee ID (MongoDB ObjectId)"
           }
         ],
         "requestBody": {
@@ -4669,18 +4636,13 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "employmentStatus"
+                  "isActive"
                 ],
                 "properties": {
-                  "employmentStatus": {
-                    "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "terminated",
-                      "resigned"
-                    ],
-                    "example": "active"
+                  "isActive": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Active status (true/false)"
                   }
                 }
               }
@@ -4710,9 +4672,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Employee ID"
+            "description": "Employee ID (MongoDB ObjectId)"
           }
         ],
         "responses": {
@@ -4741,9 +4703,9 @@
             "name": "departmentId",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Department ID"
+            "description": "Department ID (MongoDB ObjectId)"
           },
           {
             "in": "query",
@@ -5113,8 +5075,8 @@
                     "example": "user"
                   },
                   "employeeId": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
                   }
                 }
               }
@@ -5214,9 +5176,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "User ID"
+            "description": "User ID (MongoDB ObjectId)"
           }
         ],
         "requestBody": {
@@ -5241,7 +5203,7 @@
                     ]
                   },
                   "employeeId": {
-                    "type": "integer"
+                    "type": "string"
                   }
                 }
               }
@@ -5294,9 +5256,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "User ID"
+            "description": "User ID (MongoDB ObjectId)"
           }
         ],
         "responses": {
@@ -5649,9 +5611,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Attendance ID"
+            "description": "Attendance ID (MongoDB ObjectId)"
           }
         ],
         "responses": {
@@ -5696,9 +5658,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Attendance ID"
+            "description": "Attendance ID (MongoDB ObjectId)"
           }
         ],
         "requestBody": {
@@ -5782,9 +5744,9 @@
             "name": "id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Attendance ID"
+            "description": "Attendance ID (MongoDB ObjectId)"
           }
         ],
         "responses": {
@@ -5829,9 +5791,9 @@
             "in": "query",
             "name": "employeeId",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "description": "Filter by employee ID"
+            "description": "Filter by employee ID (MongoDB ObjectId)"
           },
           {
             "in": "query",
@@ -6020,9 +5982,9 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "departmentId": {
-                            "type": "integer",
-                            "example": 1
+                          "_id": {
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439011"
                           },
                           "name": {
                             "type": "string",
@@ -6033,8 +5995,8 @@
                             "example": "Information Technology"
                           },
                           "managerId": {
-                            "type": "integer",
-                            "example": 5
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439012"
                           },
                           "managerName": {
                             "type": "string",
@@ -6093,8 +6055,8 @@
                         "type": "object",
                         "properties": {
                           "departmentId": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439011"
                           },
                           "departmentName": {
                             "type": "string",
@@ -6239,9 +6201,9 @@
                     "description": "Mô tả phòng ban"
                   },
                   "managerId": {
-                    "type": "integer",
-                    "example": 5,
-                    "description": "ID nhân viên làm trưởng phòng"
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011",
+                    "description": "ID nhân viên làm trưởng phòng (MongoDB ObjectId)"
                   }
                 }
               }
@@ -6319,11 +6281,11 @@
           {
             "name": "id",
             "in": "path",
-            "description": "ID phòng ban",
+            "description": "ID phòng ban (MongoDB ObjectId)",
             "required": true,
             "schema": {
-              "type": "integer",
-              "example": 1
+              "type": "string",
+              "example": "507f1f77bcf86cd799439011"
             }
           }
         ],
@@ -6345,9 +6307,9 @@
                     "description": "Mô tả phòng ban"
                   },
                   "managerId": {
-                    "type": "integer",
-                    "example": 10,
-                    "description": "ID nhân viên làm trưởng phòng"
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439012",
+                    "description": "ID nhân viên làm trưởng phòng (MongoDB ObjectId)"
                   }
                 }
               }
@@ -6435,11 +6397,11 @@
           {
             "name": "id",
             "in": "path",
-            "description": "ID phòng ban",
+            "description": "ID phòng ban (MongoDB ObjectId)",
             "required": true,
             "schema": {
-              "type": "integer",
-              "example": 1
+              "type": "string",
+              "example": "507f1f77bcf86cd799439011"
             }
           }
         ],
