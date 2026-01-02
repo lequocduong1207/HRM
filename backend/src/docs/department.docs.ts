@@ -101,10 +101,10 @@ export const departmentSwaggerDocs = {
                                     items: {
                                         type: 'object',
                                         properties: {
-                                            departmentId: { type: 'integer', example: 1 },
+                                            _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
                                             name: { type: 'string', example: 'IT Department' },
                                             description: { type: 'string', example: 'Information Technology' },
-                                            managerId: { type: 'integer', example: 5 },
+                                            managerId: { type: 'string', example: '507f1f77bcf86cd799439012' },
                                             managerName: { type: 'string', example: 'John Doe' },
                                             employeeCount: { type: 'integer', example: 15 }
                                         }
@@ -146,7 +146,7 @@ export const departmentSwaggerDocs = {
                                     items: {
                                         type: 'object',
                                         properties: {
-                                            departmentId: { type: 'integer', example: 1 },
+                                            departmentId: { type: 'string', example: '507f1f77bcf86cd799439011' },
                                             departmentName: { type: 'string', example: 'IT Department' },
                                             employeeCount: { type: 'integer', example: 15 },
                                             activeCount: { type: 'integer', example: 14 },
@@ -255,9 +255,9 @@ export const departmentSwaggerDocs = {
                                 description: 'Mô tả phòng ban'
                             },
                             managerId: {
-                                type: 'integer',
-                                example: 5,
-                                description: 'ID nhân viên làm trưởng phòng'
+                                type: 'string',
+                                example: '507f1f77bcf86cd799439011',
+                                description: 'ID nhân viên làm trưởng phòng (MongoDB ObjectId)'
                             }
                         }
                     }
@@ -317,11 +317,11 @@ export const departmentSwaggerDocs = {
             {
                 name: 'id',
                 in: 'path',
-                description: 'ID phòng ban',
+                description: 'ID phòng ban (MongoDB ObjectId)',
                 required: true,
                 schema: {
-                    type: 'integer',
-                    example: 1
+                    type: 'string',
+                    example: '507f1f77bcf86cd799439011'
                 }
             }
         ],
@@ -343,9 +343,9 @@ export const departmentSwaggerDocs = {
                                 description: 'Mô tả phòng ban'
                             },
                             managerId: {
-                                type: 'integer',
-                                example: 10,
-                                description: 'ID nhân viên làm trưởng phòng'
+                                type: 'string',
+                                example: '507f1f77bcf86cd799439012',
+                                description: 'ID nhân viên làm trưởng phòng (MongoDB ObjectId)'
                             }
                         }
                     }
@@ -413,11 +413,11 @@ export const departmentSwaggerDocs = {
             {
                 name: 'id',
                 in: 'path',
-                description: 'ID phòng ban',
+                description: 'ID phòng ban (MongoDB ObjectId)',
                 required: true,
                 schema: {
-                    type: 'integer',
-                    example: 1
+                    type: 'string',
+                    example: '507f1f77bcf86cd799439011'
                 }
             }
         ],

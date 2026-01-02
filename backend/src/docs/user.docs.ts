@@ -27,8 +27,8 @@ export const userSwaggerDocs = {
                                 example: 'user'
                             },
                             employeeId: {
-                                type: 'integer',
-                                example: 1
+                                type: 'string',
+                                example: '507f1f77bcf86cd799439011'
                             }
                         }
                     }
@@ -135,8 +135,8 @@ export const userSwaggerDocs = {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'User ID'
+                schema: { type: 'string' },
+                description: 'User ID (MongoDB ObjectId)'
             }
         ],
         requestBody: {
@@ -158,7 +158,7 @@ export const userSwaggerDocs = {
                                 enum: ['admin', 'user']
                             },
                             employeeId: {
-                                type: 'integer'
+                                type: 'string'
                             }
                         }
                     }
@@ -194,8 +194,8 @@ export const userSwaggerDocs = {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'User ID'
+                schema: { type: 'string' },
+                description: 'User ID (MongoDB ObjectId)'
             }
         ],
         responses: {

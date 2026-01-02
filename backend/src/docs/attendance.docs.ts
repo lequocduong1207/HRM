@@ -213,8 +213,8 @@ export const attendanceSwaggerDocs = {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'Attendance ID'
+                schema: { type: 'string' },
+                description: 'Attendance ID (MongoDB ObjectId)'
             }
         ],
         responses: {
@@ -245,8 +245,8 @@ export const attendanceSwaggerDocs = {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'Attendance ID'
+                schema: { type: 'string' },
+                description: 'Attendance ID (MongoDB ObjectId)'
             }
         ],
         requestBody: {
@@ -298,8 +298,8 @@ export const attendanceSwaggerDocs = {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'Attendance ID'
+                schema: { type: 'string' },
+                description: 'Attendance ID (MongoDB ObjectId)'
             }
         ],
         responses: {
@@ -329,8 +329,8 @@ export const attendanceSwaggerDocs = {
             {
                 in: 'query',
                 name: 'employeeId',
-                schema: { type: 'integer' },
-                description: 'Filter by employee ID'
+                schema: { type: 'string' },
+                description: 'Filter by employee ID (MongoDB ObjectId)'
             },
             {
                 in: 'query',

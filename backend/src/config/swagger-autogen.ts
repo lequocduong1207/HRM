@@ -58,7 +58,7 @@ const doc = {
             Employee: {
                 type: 'object',
                 properties: {
-                    employeeId: { type: 'integer', example: 1 },
+                    _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
                     fullName: { type: 'string', example: 'Nguyen Van A' },
                     dob: { type: 'string', format: 'date', example: '1990-01-01' },
                     gender: { type: 'string', enum: ['Male', 'Female', 'Other'], example: 'Male' },
@@ -66,11 +66,12 @@ const doc = {
                     phone: { type: 'string', example: '0901234567' },
                     address: { type: 'string', example: 'Ha Noi, Vietnam' },
                     nationalId: { type: 'string', example: '001234567890' },
-                    departmentId: { type: 'integer', example: 1 },
+                    departmentId: { type: 'string', example: '507f1f77bcf86cd799439012' },
                     departmentName: { type: 'string', example: 'IT Department' },
                     position: { type: 'string', example: 'Software Engineer' },
                     hireDate: { type: 'string', format: 'date', example: '2024-01-01' },
                     employmentStatus: { type: 'string', enum: ['active', 'inactive', 'terminated', 'resigned'], example: 'active' },
+                    isActive: { type: 'boolean', example: true },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' }
                 }
@@ -84,11 +85,11 @@ const doc = {
             User: {
                 type: 'object',
                 properties: {
-                    userId: { type: 'integer', example: 1 },
+                    _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
                     username: { type: 'string', example: 'john.doe' },
                     email: { type: 'string', format: 'email', example: 'john.doe@example.com' },
                     role: { type: 'string', enum: ['admin', 'user'], example: 'user' },
-                    employeeId: { type: 'integer', example: 1 },
+                    employeeId: { type: 'string', example: '507f1f77bcf86cd799439012' },
                     employee: { $ref: '#/components/schemas/Employee' },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' }
@@ -104,8 +105,8 @@ const doc = {
             Attendance: {
                 type: 'object',
                 properties: {
-                    attendanceId: { type: 'integer', example: 1 },
-                    employeeId: { type: 'integer', example: 1 },
+                    _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+                    employeeId: { type: 'string', example: '507f1f77bcf86cd799439012' },
                     date: { type: 'string', format: 'date', example: '2024-12-17' },
                     checkInTime: { type: 'string', format: 'date-time', example: '2024-12-17T08:00:00Z' },
                     checkOutTime: { type: 'string', format: 'date-time', example: '2024-12-17T17:00:00Z' },
@@ -125,10 +126,10 @@ const doc = {
             Department: {
                 type: 'object',
                 properties: {
-                    departmentId: { type: 'integer', example: 1 },
+                    _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
                     name: { type: 'string', example: 'IT Department' },
                     description: { type: 'string', example: 'Information Technology Department' },
-                    managerId: { type: 'integer', example: 5 },
+                    managerId: { type: 'string', example: '507f1f77bcf86cd799439012' },
                     managerName: { type: 'string', example: 'John Doe' },
                     employeeCount: { type: 'integer', example: 15 },
                     createdAt: { type: 'string', format: 'date-time' },

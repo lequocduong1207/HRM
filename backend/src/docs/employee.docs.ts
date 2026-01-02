@@ -14,7 +14,7 @@ export const employeeSwaggerDocs = {
             {
                 in: 'query',
                 name: 'departmentId',
-                schema: { type: 'integer' },
+                schema: { type: 'string' },
                 description: 'Filter by department ID'
             },
             {
@@ -107,7 +107,7 @@ export const employeeSwaggerDocs = {
                             phone: { type: 'string', example: '0901234567' },
                             address: { type: 'string', example: 'Ha Noi, Vietnam' },
                             nationalId: { type: 'string', example: '001234567890' },
-                            departmentId: { type: 'integer', example: 1 },
+                            departmentId: { type: 'string', example: '507f1f77bcf86cd799439011' },
                             position: { type: 'string', example: 'Software Engineer' },
                             hireDate: { type: 'string', format: 'date', example: '2024-01-01' },
                             employmentStatus: { 
@@ -135,8 +135,8 @@ export const employeeSwaggerDocs = {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'Employee ID'
+                schema: { type: 'string' },
+                description: 'Employee ID (MongoDB ObjectId)'
             }
         ],
         requestBody: {
@@ -153,7 +153,7 @@ export const employeeSwaggerDocs = {
                             phone: { type: 'string' },
                             address: { type: 'string' },
                             nationalId: { type: 'string' },
-                            departmentId: { type: 'integer' },
+                            departmentId: { type: 'string' },
                             position: { type: 'string' },
                             hireDate: { type: 'string', format: 'date' },
                             employmentStatus: { 
@@ -173,15 +173,15 @@ export const employeeSwaggerDocs = {
     updateEmploymentStatus: {
         tags: ['Employees'],
         summary: 'Update employment status',
-        description: 'Update employee employment status',
+        description: 'Update employee active status',
         security: [{ bearerAuth: [] }],
         parameters: [
             {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'Employee ID'
+                schema: { type: 'string' },
+                description: 'Employee ID (MongoDB ObjectId)'
             }
         ],
         requestBody: {
@@ -190,12 +190,12 @@ export const employeeSwaggerDocs = {
                 'application/json': {
                     schema: {
                         type: 'object',
-                        required: ['employmentStatus'],
+                        required: ['isActive'],
                         properties: {
-                            employmentStatus: {
-                                type: 'string',
-                                enum: ['active', 'inactive', 'terminated', 'resigned'],
-                                example: 'active'
+                            isActive: {
+                                type: 'boolean',
+                                example: true,
+                                description: 'Active status (true/false)'
                             }
                         }
                     }
@@ -216,8 +216,8 @@ export const employeeSwaggerDocs = {
                 in: 'path',
                 name: 'id',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'Employee ID'
+                schema: { type: 'string' },
+                description: 'Employee ID (MongoDB ObjectId)'
             }
         ],
         responses: {
@@ -235,8 +235,8 @@ export const employeeSwaggerDocs = {
                 in: 'path',
                 name: 'departmentId',
                 required: true,
-                schema: { type: 'integer' },
-                description: 'Department ID'
+                schema: { type: 'string' },
+                description: 'Department ID (MongoDB ObjectId)'
             },
             {
                 in: 'query',
