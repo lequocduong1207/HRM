@@ -30,8 +30,8 @@ export class EmployeeController {
 
         const result = await this.employeeService.getAllEmployees({
             searchTerm: searchTerm as string,
-            departmentId: departmentId ? Number(departmentId) : undefined,
-            employmentStatus: employmentStatus as any,
+            departmentId: departmentId as string,
+            employmentStatus: employmentStatus as string,
             page: Number(page),
             limit: Number(limit)
         });
@@ -54,7 +54,7 @@ export class EmployeeController {
             #swagger.summary = 'Get employee by ID'
             #swagger.description = 'Get detailed information of an employee'
         */
-        const employeeId = parseInt(req.params.id);
+        const employeeId = req.params.id;
         const employee = await this.employeeService.getEmployeeById(employeeId);
 
         res.status(200).json({
@@ -94,7 +94,7 @@ export class EmployeeController {
             #swagger.summary = 'Update employee'
             #swagger.description = 'Update employee information'
         */
-        const employeeId = parseInt(req.params.id);
+        const employeeId = req.params.id;
         const employee = await this.employeeService.updateEmployee(employeeId, req.body);
 
         res.status(200).json({
@@ -115,19 +115,19 @@ export class EmployeeController {
             #swagger.summary = 'Update employment status'
             #swagger.description = 'Update employee employment status'
         */
-        const employeeId = parseInt(req.params.id);
-        const { employmentStatus } = req.body;
+        const employeeId = req.params.id;
+        const { isActive } = req.body;
 
-        if (!employmentStatus) {
+        if (isActive === undefined) {
             return res.status(400).json({
                 success: false,
-                message: 'Employment status is required'
+                message: 'isActive is required'
             });
         }
 
-        const employee = await this.employeeService.updateEmploymentStatus(
+        const employee = await this.employeeService.updateEmployeeStatus(
             employeeId,
-            employmentStatus
+            isActive
         );
 
         res.status(200).json({
@@ -148,7 +148,7 @@ export class EmployeeController {
             #swagger.summary = 'Delete employee'
             #swagger.description = 'Soft delete an employee'
         */
-        const employeeId = parseInt(req.params.id);
+        const employeeId = req.params.id;
         await this.employeeService.deleteEmployee(employeeId);
 
         res.status(200).json({
@@ -168,12 +168,12 @@ export class EmployeeController {
             #swagger.summary = 'Get employees by department'
             #swagger.description = 'Get all employees in a specific department'
         */
-        const departmentId = parseInt(req.params.departmentId);
+        const departmentId = req.params.departmentId;
         const { employmentStatus } = req.query;
 
         const employees = await this.employeeService.getEmployeesByDepartment(
             departmentId,
-            employmentStatus as any
+            employmentStatus as string
         );
 
         res.status(200).json({
@@ -222,53 +222,6 @@ export class EmployeeController {
     });
 
     /**
-     * @route   GET /api/v1/employees/birthdays
-     * @desc    Lấy danh sách sinh nhật trong tháng
-     * @access  Private
-     */
-    getBirthdaysInMonth = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get employees birthdays'
-            #swagger.description = 'Get list of employees with birthdays in specified month'
-        */
-        const { month, year } = req.query;
-        
-        const employees = await this.employeeService.getBirthdaysInMonth(
-            month ? Number(month) : undefined,
-            year ? Number(year) : undefined
-        );
-
-        res.status(200).json({
-            success: true,
-            data: employees
-        });
-    });
-
-    /**
-     * @route   GET /api/v1/employees/work-anniversaries
-     * @desc    Lấy danh sách kỷ niệm làm việc sắp tới
-     * @access  Private
-     */
-    getUpcomingWorkAnniversaries = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get work anniversaries'
-            #swagger.description = 'Get list of employees with upcoming work anniversaries'
-        */
-        const { month } = req.query;
-        
-        const anniversaries = await this.employeeService.getUpcomingWorkAnniversaries(
-            month ? Number(month) : undefined
-        );
-
-        res.status(200).json({
-            success: true,
-            data: anniversaries
-        });
-    });
-
-    /**
      * @route   GET /api/v1/employees/search
      * @desc    Tìm kiếm nhân viên
      * @access  Private
@@ -312,7 +265,7 @@ export class EmployeeController {
             #swagger.summary = 'Get employee overview'
             #swagger.description = 'Get overview statistics of all employees'
         */
-        const overview = await this.employeeService.getOverview();
+        const overview = await this.employeeService.getOverView();
 
         res.status(200).json({
             success: true,

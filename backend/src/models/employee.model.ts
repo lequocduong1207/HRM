@@ -12,6 +12,7 @@ export interface EmployeeDocument extends Document {
   position?: string;
   hireDate?: Date;
   employmentStatus?: string;
+  isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -66,6 +67,10 @@ const EmployeeSchema = new Schema<EmployeeDocument>(
       type: String,
       maxlength: 20,
       default: 'ACTIVE',
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   {

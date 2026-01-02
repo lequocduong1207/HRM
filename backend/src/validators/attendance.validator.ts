@@ -75,7 +75,7 @@ export const getAttendanceHistorySchema = {
             .messages({
                 'date.min': 'End date must be after start date'
             }),
-        employeeId: Joi.number().optional().positive()
+        employeeId: Joi.string().optional().pattern(/^[0-9a-fA-F]{24}$/)
     })
 };
 
@@ -84,12 +84,12 @@ export const getAttendanceHistorySchema = {
  */
 export const getAttendanceByIdSchema = {
     params: Joi.object({
-        id: Joi.number()
+        id: Joi.string()
             .required()
-            .positive()
+            .pattern(/^[0-9a-fA-F]{24}$/)
             .messages({
                 'any.required': 'Attendance ID is required',
-                'number.positive': 'Invalid attendance ID'
+                'string.pattern.base': 'Invalid attendance ID format'
             })
     })
 };
@@ -101,8 +101,8 @@ export const listAttendancesSchema = {
     query: Joi.object({
         page: Joi.number().optional().min(1).default(1),
         limit: Joi.number().optional().min(1).max(100).default(10),
-        departmentId: Joi.number().optional().positive(),
-        employeeId: Joi.number().optional().positive(),
+        departmentId: Joi.string().optional().pattern(/^[0-9a-fA-F]{24}$/),
+        employeeId: Joi.string().optional().pattern(/^[0-9a-fA-F]{24}$/),
         startDate: Joi.date().optional(),
         endDate: Joi.date().optional().min(Joi.ref('startDate')),
         status: Joi.string().optional().valid('Present', 'Late', 'Absent')
@@ -114,7 +114,7 @@ export const listAttendancesSchema = {
  */
 export const updateAttendanceSchema = {
     params: Joi.object({
-        id: Joi.number().required().positive()
+        id: Joi.string().required().pattern(/^[0-9a-fA-F]{24}$/)
     }),
     body: Joi.object({
         checkOutTime: Joi.date().optional(),

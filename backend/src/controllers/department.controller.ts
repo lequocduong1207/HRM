@@ -30,7 +30,7 @@ export class DepartmentController {
             searchTerm: searchTerm as string,
             page: Number(page),
             limit: Number(limit)
-        });
+        }) as { data: any[], pagination: any };
 
         res.status(200).json({
             success: true,
@@ -88,7 +88,7 @@ export class DepartmentController {
             #swagger.summary = 'Get department by ID'
             #swagger.description = 'Get detailed information of a department'
         */
-        const departmentId = parseInt(req.params.id);
+        const departmentId = req.params.id;
         const department = await this.departmentService.getDepartmentById(departmentId);
 
         res.status(200).json({
@@ -128,7 +128,7 @@ export class DepartmentController {
             #swagger.summary = 'Update department'
             #swagger.description = 'Update department information'
         */
-        const departmentId = parseInt(req.params.id);
+        const departmentId = req.params.id;
         const department = await this.departmentService.updateDepartment(departmentId, req.body);
 
         res.status(200).json({
@@ -149,7 +149,7 @@ export class DepartmentController {
             #swagger.summary = 'Delete department'
             #swagger.description = 'Delete a department'
         */
-        const departmentId = parseInt(req.params.id);
+        const departmentId = req.params.id;
         await this.departmentService.deleteDepartment(departmentId);
 
         res.status(200).json({

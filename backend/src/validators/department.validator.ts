@@ -54,15 +54,12 @@ export const updateDepartmentSchema = {
             .messages({
                 'string.max': 'Description cannot exceed 500 characters'
             }),
-        managerId: Joi.number()
+        managerId: Joi.string()
             .optional()
             .allow(null)
-            .integer()
-            .positive()
+            .pattern(/^[0-9a-fA-F]{24}$/)
             .messages({
-                'number.base': 'Manager ID must be a number',
-                'number.integer': 'Manager ID must be an integer',
-                'number.positive': 'Manager ID must be a positive number'
+                'string.pattern.base': 'Invalid manager ID format (must be MongoDB ObjectId)'
             })
     })
 };
@@ -72,15 +69,12 @@ export const updateDepartmentSchema = {
  */
 export const departmentIdSchema = {
     params: Joi.object({
-        id: Joi.number()
+        id: Joi.string()
             .required()
-            .integer()
-            .positive()
+            .pattern(/^[0-9a-fA-F]{24}$/)
             .messages({
                 'any.required': 'Department ID is required',
-                'number.base': 'Department ID must be a number',
-                'number.integer': 'Department ID must be an integer',
-                'number.positive': 'Department ID must be a positive number'
+                'string.pattern.base': 'Invalid department ID format (must be MongoDB ObjectId)'
             })
     })
 };

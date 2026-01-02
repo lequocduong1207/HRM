@@ -62,38 +62,6 @@ router.get('/recent',
 );
 
 /**
- * @route   GET /api/v1/employees/birthdays
- * @desc    Lấy danh sách sinh nhật trong tháng
- * @access  Private
- */
-router.get('/birthdays',
-    /* 
-        #swagger.tags = ['Employees']
-        #swagger.path = '/employees/birthdays'
-        #swagger.summary = 'Sinh nhật nhân viên'
-        #swagger.description = 'Lấy danh sách nhân viên có sinh nhật trong tháng'
-        #swagger.security = [{ "bearerAuth": [] }]
-    */
-    employeeController.getBirthdaysInMonth
-);
-
-/**
- * @route   GET /api/v1/employees/work-anniversaries
- * @desc    Lấy danh sách kỷ niệm làm việc sắp tới
- * @access  Private
- */
-router.get('/work-anniversaries',
-    /* 
-        #swagger.tags = ['Employees']
-        #swagger.path = '/employees/work-anniversaries'
-        #swagger.summary = 'Kỷ niệm làm việc'
-        #swagger.description = 'Lấy danh sách kỷ niệm làm việc sắp tới'
-        #swagger.security = [{ "bearerAuth": [] }]
-    */
-    employeeController.getUpcomingWorkAnniversaries
-);
-
-/**
  * @route   GET /api/v1/employees/search
  * @desc    Tìm kiếm nhân viên
  * @access  Private

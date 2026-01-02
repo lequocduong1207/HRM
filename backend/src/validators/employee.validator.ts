@@ -53,12 +53,12 @@ export const createEmployeeSchema = {
             .messages({
                 'any.required': 'National ID is required'
             }),
-        departmentId: Joi.number()
+        departmentId: Joi.string()
             .required()
-            .positive()
+            .pattern(/^[0-9a-fA-F]{24}$/)
             .messages({
                 'any.required': 'Department is required',
-                'number.positive': 'Invalid department ID'
+                'string.pattern.base': 'Invalid department ID format (must be MongoDB ObjectId)'
             }),
         position: Joi.string()
             .required()
@@ -90,12 +90,12 @@ export const createEmployeeSchema = {
  */
 export const updateEmployeeSchema = {
     params: Joi.object({
-        id: Joi.number()
+        id: Joi.string()
             .required()
-            .positive()
+            .pattern(/^[0-9a-fA-F]{24}$/)
             .messages({
                 'any.required': 'Employee ID is required',
-                'number.positive': 'Invalid employee ID'
+                'string.pattern.base': 'Invalid employee ID format (must be MongoDB ObjectId)'
             })
     }),
     body: Joi.object({
@@ -106,7 +106,7 @@ export const updateEmployeeSchema = {
         phone: Joi.string().optional().pattern(/^[0-9]{10,11}$/),
         address: Joi.string().optional().max(200),
         nationalId: Joi.string().optional().max(20),
-        departmentId: Joi.number().optional().positive(),
+        departmentId: Joi.string().optional().pattern(/^[0-9a-fA-F]{24}$/),
         position: Joi.string().optional().max(100),
         salary: Joi.number().optional().min(0),
         employeeStatus: Joi.string().optional().valid('Active', 'Inactive', 'On Leave')
@@ -122,7 +122,7 @@ export const listEmployeesSchema = {
     query: Joi.object({
         page: Joi.number().optional().min(1).default(1),
         limit: Joi.number().optional().min(1).max(100).default(10),
-        departmentId: Joi.number().optional().positive(),
+        departmentId: Joi.string().optional().pattern(/^[0-9a-fA-F]{24}$/),
         status: Joi.string().optional().valid('Active', 'Inactive', 'On Leave'),
         search: Joi.string().optional().max(100)
     })
@@ -133,12 +133,12 @@ export const listEmployeesSchema = {
  */
 export const getEmployeeByIdSchema = {
     params: Joi.object({
-        id: Joi.number()
+        id: Joi.string()
             .required()
-            .positive()
+            .pattern(/^[0-9a-fA-F]{24}$/)
             .messages({
                 'any.required': 'Employee ID is required',
-                'number.positive': 'Invalid employee ID'
+                'string.pattern.base': 'Invalid employee ID format'
             })
     })
 };
@@ -148,12 +148,12 @@ export const getEmployeeByIdSchema = {
  */
 export const deleteEmployeeSchema = {
     params: Joi.object({
-        id: Joi.number()
+        id: Joi.string()
             .required()
-            .positive()
+            .pattern(/^[0-9a-fA-F]{24}$/)
             .messages({
                 'any.required': 'Employee ID is required',
-                'number.positive': 'Invalid employee ID'
+                'string.pattern.base': 'Invalid employee ID format'
             })
     })
 };
