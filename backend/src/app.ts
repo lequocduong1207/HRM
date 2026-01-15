@@ -7,13 +7,43 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './swagger-output.json';
 import { errorHandler } from './middlewares/index.js';
 import { notFoundHandler } from './middlewares/index.js';
+import { mongoSanitizeMiddleware, sanitizeStrings } from './middlewares/security/sanitize.middleware.js';
+import { apiLimiter } from './middlewares/security/rate-limit.middleware.js';
+import { productionHelmetConfig, developmentHelmetConfig } from './middlewares/security/helmet.middleware.js';
+import { validateRequest } from './middlewares/security/request-validation.middleware.js';
+import { ipBlacklist, logIpAccess } from './middlewares/security/ip-filter.middleware.js';
 
 const app: Application = express();
 
-// Helmet - Security headers
-app.use(helmet());
+// ============================================
+// ⚙️ EXPRESS CONFIGURATION
+// ============================================
 
-// CORS - Cross-Origin Resource Sharing
+// Trust proxy - Important when behind nginx/CloudFlare
+// This allows us to get real client IP from X-Forwarded-For header
+app.set('trust proxy', true);
+
+// ============================================
+// 🔒 SECURITY MIDDLEWARES (Order matters!)
+// ============================================
+
+// 1. Advanced Helmet - Security headers
+// Choose configuration based on environment
+const helmetConfig = process.env.NODE_ENV === 'production' 
+  ? productionHelmetConfig 
+  : developmentHelmetConfig;
+
+app.use(helmetConfig);
+
+// 2. IP Access Control - Block malicious IPs
+app.use(ipBlacklist);
+
+// 3. IP Logging - Track all access (optional, for monitoring)
+if (process.env.NODE_ENV === 'production') {
+    app.use('/api', logIpAccess);
+}
+
+// 4. CORS - Cross-Origin Resource Sharing
 app.use(cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
@@ -21,14 +51,33 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// 5. Rate Limiting - Prevent brute force & DDoS
+// Apply to all routes
+app.use('/api', apiLimiter);
 
-// Compression - Gzip response 
-app.use(compression());
-
+// 6. Body Parser - Parse JSON and URL-encoded data
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 7. Input Sanitization - Prevent NoSQL Injection & XSS
+// MUST be after body parser!
+app.use(mongoSanitizeMiddleware);
+app.use(sanitizeStrings);
+
+// 8. Request Validation - Prevent DoS via large payloads
+app.use('/api', validateRequest);
+
+// 9. Compression - Gzip response 
+app.use(compression());
+
+// ============================================
+// 📚 SWAGGER DOCUMENTATION
+// ============================================
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// ============================================
+// 🔍 DEVELOPMENT LOGGING
+// ============================================
 
 if (process.env.NODE_ENV === 'development') {
     app.use((req: Request, res: Response, next: NextFunction) => {

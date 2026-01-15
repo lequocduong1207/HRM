@@ -1,20 +1,25 @@
 import { Router } from 'express';
 import { protect, validate } from '../../middlewares/index.js';
 import * as authController from '../../controllers/auth.controller.js';
-import { loginSchema } from '../../validators/index.js';
+import { loginSchema, registerSchema, changePasswordSchema, resetPasswordSchema } from '../../validators/index.js';
+import { authLimiter, sensitiveOperationsLimiter } from '../../middlewares/security/rate-limit.middleware.js';
 
 const router = Router();
 
 // ========================================
-// PUBLIC ROUTES
+// PUBLIC ROUTES (with rate limiting)
 // ========================================
 
 /**
  * @route   POST /api/v1/auth/login
  * @desc    Login with email
  * @access  Public
+ * @security Rate limited: 5 requests per 15 minutes
  */
 router.post('/login',
+    authLimiter, // 🔴 STRICT: 5 requests/15min
+    validate(loginSchema),
+    authController.login,
     /* 
         #swagger.tags = ['Auth']
         #swagger.path = '/auth/login'
@@ -84,8 +89,11 @@ router.post('/login',
  * @route   POST /api/v1/auth/refresh-token
  * @desc    Refresh access token
  * @access  Public
+ * @security Rate limited: 10 requests per 15 minutes
  */
 router.post('/refresh-token',
+    sensitiveOperationsLimiter, // 🟡 MODERATE: 10 requests/15min
+    authController.refreshToken,
     /* 
         #swagger.tags = ['Auth']
         #swagger.path = '/auth/refresh-token'

@@ -45,9 +45,24 @@ export class DepartmentService {
     }
 
     async deleteDepartment(departmentId: string) {
+        // Check if department exists and is not deleted
+        const department = await this.departmentRepository.findById(departmentId);
+        if (!department) {
+            throw new AppError('Department not found', 404);
+        }
+
+        // Check if department has employees
+        const employeeCount = await this.departmentRepository.countEmployeesByDepartment(departmentId);
+        if (employeeCount > 0) {
+            throw new AppError(
+                `Cannot delete department. There are ${employeeCount} employee(s) in this department. Please reassign them first.`, 
+                400
+            );
+        }
+
         const deleted = await this.departmentRepository.delete(departmentId);
         if (!deleted) {
-            throw new AppError('Department not found', 404);
+            throw new AppError('Failed to delete department', 500);
         }
         return deleted;
     }
@@ -63,6 +78,14 @@ export class DepartmentService {
     async getDepartmentsOverview() {
         const overview = await this.departmentRepository.getOverview();
         return overview;
+    }
+
+    async restoreDepartment(departmentId: string) {
+        const restored = await this.departmentRepository.restore(departmentId);
+        if (!restored) {
+            throw new AppError('Department not found or already active', 404);
+        }
+        return restored;
     }
 
 }

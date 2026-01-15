@@ -1742,8 +1742,8 @@
         "tags": [
           "Departments"
         ],
-        "summary": "Xóa phòng ban",
-        "description": "Xóa một phòng ban",
+        "summary": "Xóa phòng ban (soft delete)",
+        "description": "Xóa một phòng ban (chỉ đánh dấu xóa)",
         "parameters": [
           {
             "name": "id",
@@ -1790,6 +1790,35 @@
         ],
         "summary": "Tạo phòng ban mới",
         "description": "Tạo một phòng ban mới",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/departments/{id}/restore": {
+      "patch": {
+        "tags": [
+          "Departments"
+        ],
+        "summary": "Khôi phục phòng ban",
+        "description": "Khôi phục một phòng ban đã bị xóa",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""

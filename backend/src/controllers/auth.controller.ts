@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler, AppError } from '../middlewares/index.js';
 import * as authService from '../services/auth.service.js';
+import { AuditService } from '../services/audit.service.js';
 
 /**
  * @route   POST /api/v1/auth/login
@@ -20,8 +21,12 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     */
     
     const { email, password } = req.body;
+    
+    // Get IP address and user agent for audit logging
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const userAgent = req.headers['user-agent'];
 
-    const result = await authService.login(email, password);
+    const result = await authService.login(email, password, ipAddress, userAgent);
 
     // Set HTTP-only cookie
     res.cookie('token', result.token, {
@@ -48,6 +53,22 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
  * @access  Private
  */
 export const logout = asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const userAgent = req.headers['user-agent'];
+    
+    // 📝 Audit log - Logout
+    await AuditService.log({
+        action: 'LOGOUT',
+        userId: user.userId,
+        userEmail: user.email,
+        userRole: user.role,
+        ipAddress,
+        userAgent,
+        description: `User logged out`,
+        success: true
+    });
+    
     // Clear cookie
     res.clearCookie('token', {
         httpOnly: true,
@@ -109,9 +130,24 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
  */
 export const changePassword = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.userId;
+    const user = req.user!;
     const { currentPassword, newPassword } = req.body;
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const userAgent = req.headers['user-agent'];
 
     await authService.changePassword(userId, currentPassword, newPassword);
+    
+    // 📝 Audit log - Password changed
+    await AuditService.log({
+        action: 'PASSWORD_CHANGED',
+        userId: user.userId,
+        userEmail: user.email,
+        userRole: user.role,
+        ipAddress,
+        userAgent,
+        description: `Password changed successfully`,
+        success: true
+    });
 
     res.status(200).json({
         success: true,
@@ -126,8 +162,20 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
  */
 export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     const { email } = req.body;
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const userAgent = req.headers['user-agent'];
 
     await authService.forgotPassword(email);
+    
+    // 📝 Audit log - Password reset requested
+    await AuditService.log({
+        action: 'PASSWORD_RESET_REQUESTED',
+        userEmail: email,
+        ipAddress,
+        userAgent,
+        description: `Password reset requested for ${email}`,
+        success: true
+    });
 
     res.status(200).json({
         success: true,
@@ -143,8 +191,19 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
     const { token } = req.params;
     const { password } = req.body;
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const userAgent = req.headers['user-agent'];
 
     await authService.resetPassword(token, password);
+    
+    // 📝 Audit log - Password reset completed
+    await AuditService.log({
+        action: 'PASSWORD_RESET_COMPLETED',
+        ipAddress,
+        userAgent,
+        description: `Password reset completed using token`,
+        success: true
+    });
 
     res.status(200).json({
         success: true,

@@ -1,5 +1,6 @@
 import { AppError } from '../middlewares/index.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
+import { AuditService } from './audit.service.js';
 import {
     hashPassword,
     comparePassword,
@@ -35,104 +36,236 @@ interface LoginResult {
 /**
  * Register new user
  */
-export const register = async (data: RegisterData): Promise<LoginResult> => {
-    // Check if email exists
-    const emailExists = await authRepo.emailExists(data.email);
-    if (emailExists) {
-        throw new AppError('Email already exists', 409);
-    }
+export const register = async (data: RegisterData, ipAddress: string = 'unknown', userAgent?: string): Promise<LoginResult> => {
+    try {
+        // Check if email exists
+        const emailExists = await authRepo.emailExists(data.email);
+        if (emailExists) {
+            throw new AppError('Email already exists', 409);
+        }
 
-    // Hash password
-    const hashedPassword = await hashPassword(data.password);
+        // Hash password
+        const hashedPassword = await hashPassword(data.password);
 
-    // Create user
-    const user = await authRepo.createUser({
-        email: data.email,
-        password: hashedPassword,
-        fullName: data.fullName,
-        role: 'employee'
-    });
+        // Create user
+        const user = await authRepo.createUser({
+            email: data.email,
+            password: hashedPassword,
+            fullName: data.fullName,
+            role: 'employee'
+        });
 
-    // Generate tokens
-    const token = generateToken({
-        userId: user._id.toString(),
-        email: user.email,
-        role: user.role
-    });
-
-    const refreshToken = generateRefreshToken({
-        userId: user._id.toString(),
-        email: user.email,
-        role: user.role
-    });
-
-    // Generate email verification token
-    const verificationToken = generateEmailVerificationToken(user._id.toString());
-    // TODO: Send verification email
-    console.log(`Verification token for ${user.email}: ${verificationToken}`);
-
-    return {
-        user: {
+        // Generate tokens
+        const token = generateToken({
             userId: user._id.toString(),
             email: user.email,
-            fullName: user.fullName,
             role: user.role
-        },
-        token,
-        refreshToken
-    };
+        });
+
+        const refreshToken = generateRefreshToken({
+            userId: user._id.toString(),
+            email: user.email,
+            role: user.role
+        });
+
+        // Generate email verification token
+        const verificationToken = generateEmailVerificationToken(user._id.toString());
+        // TODO: Send verification email
+        console.log(`Verification token for ${user.email}: ${verificationToken}`);
+
+        // 📝 Audit log - User created
+        await AuditService.log({
+            action: 'USER_CREATED',
+            userId: user._id.toString(),
+            userEmail: user.email,
+            userRole: user.role,
+            ipAddress,
+            userAgent,
+            description: `New user registered: ${user.email}`,
+            resource: 'User',
+            resourceId: user._id.toString(),
+            success: true
+        });
+
+        return {
+            user: {
+                userId: user._id.toString(),
+                email: user.email,
+                fullName: user.fullName,
+                role: user.role
+            },
+            token,
+            refreshToken
+        };
+    } catch (error) {
+        // 📝 Audit log - Registration failed
+        await AuditService.log({
+            action: 'USER_CREATED',
+            userEmail: data.email,
+            ipAddress,
+            userAgent,
+            description: `Failed user registration: ${data.email}`,
+            success: false,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        });
+        throw error;
+    }
 };
 
 /**
  * Login user with email
  */
-export const login = async (email: string, password: string): Promise<LoginResult> => {
-    // Find user by email
-    const user = await authRepo.findByEmail(email);
-    if (!user) {
-        throw new AppError('Invalid email or password', 401);
-    }
+export const login = async (email: string, password: string, ipAddress: string = 'unknown', userAgent?: string): Promise<LoginResult> => {
+    try {
+        // Find user by email
+        const user = await authRepo.findByEmail(email);
+        if (!user) {
+            // 📝 Audit log - Login failed (user not found)
+            await AuditService.log({
+                action: 'LOGIN_FAILED',
+                userEmail: email,
+                ipAddress,
+                userAgent,
+                description: `Failed login attempt: User not found`,
+                success: false,
+                errorMessage: 'Invalid email or password'
+            });
+            throw new AppError('Invalid email or password', 401);
+        }
 
-    // Check if user is active
-    if (!user.isActive) {
-        throw new AppError('Account is inactive', 403);
-    }
+        // 🔒 Check if account is locked
+        // @ts-ignore - using virtual field
+        if (user.isLocked) {
+            const lockUntil = user.lockUntil;
+            const remainingTime = lockUntil ? Math.ceil((lockUntil.getTime() - Date.now()) / 60000) : 30;
+            
+            // 📝 Audit log - Account locked
+            await AuditService.log({
+                action: 'ACCOUNT_LOCKED',
+                userId: user._id.toString(),
+                userEmail: user.email,
+                ipAddress,
+                userAgent,
+                description: `Login attempt on locked account`,
+                severity: 'WARNING',
+                success: false,
+                errorMessage: `Account locked for ${remainingTime} minutes`
+            });
+            
+            throw new AppError(
+                `Account is temporarily locked due to too many failed login attempts. Please try again in ${remainingTime} minutes.`, 
+                423 // 423 Locked
+            );
+        }
 
-    // Verify password
-    if (!user.passwordHash) {
-        throw new AppError('Invalid user account', 500);
-    }
-    const isPasswordValid = await comparePassword(password, user.passwordHash);
-    if (!isPasswordValid) {
-        throw new AppError('Invalid email or password', 401);
-    }
+        // Check if user is active
+        if (!user.isActive) {
+            // 📝 Audit log - Inactive account
+            await AuditService.log({
+                action: 'LOGIN_FAILED',
+                userId: user._id.toString(),
+                userEmail: user.email,
+                ipAddress,
+                userAgent,
+                description: `Login attempt on inactive account`,
+                severity: 'WARNING',
+                success: false,
+                errorMessage: 'Account is inactive'
+            });
+            throw new AppError('Account is inactive', 403);
+        }
 
-    // Update last login
-    await authRepo.updateLastLogin(user._id.toString());
+        // Verify password
+        if (!user.passwordHash) {
+            throw new AppError('Invalid user account', 500);
+        }
+        const isPasswordValid = await comparePassword(password, user.passwordHash);
+        
+        if (!isPasswordValid) {
+            // 🔒 Increment login attempts on failed password
+            // @ts-ignore - using schema method
+            await user.incrementLoginAttempts();
+            
+            // Calculate remaining attempts
+            const maxAttempts = 5;
+            const remainingAttempts = maxAttempts - (user.loginAttempts + 1);
+            
+            // 📝 Audit log - Login failed (wrong password)
+            await AuditService.log({
+                action: 'LOGIN_FAILED',
+                userId: user._id.toString(),
+                userEmail: user.email,
+                ipAddress,
+                userAgent,
+                description: `Failed login attempt: Invalid password (${remainingAttempts} attempts remaining)`,
+                severity: remainingAttempts <= 1 ? 'ERROR' : 'WARNING',
+                success: false,
+                errorMessage: 'Invalid password',
+                metadata: {
+                    remainingAttempts,
+                    totalAttempts: user.loginAttempts + 1
+                }
+            });
+            
+            if (remainingAttempts > 0) {
+                throw new AppError(
+                    `Invalid email or password. ${remainingAttempts} attempt(s) remaining before account lockout.`, 
+                    401
+                );
+            } else {
+                throw new AppError(
+                    'Invalid email or password. Account has been locked for 30 minutes due to too many failed attempts.', 
+                    401
+                );
+            }
+        }
 
-    // Generate tokens
-    const token = generateToken({
-        userId: user._id.toString(),
-        email: user.email,
-        role: user.role
-    });
+        // 🔒 Reset login attempts on successful login
+        // @ts-ignore - using schema method
+        await user.resetLoginAttempts();
 
-    const refreshToken = generateRefreshToken({
-        userId: user._id.toString(),
-        email: user.email,
-        role: user.role
-    });
+        // Update last login
+        await authRepo.updateLastLogin(user._id.toString());
 
-    return {
-        user: {
+        // Generate tokens
+        const token = generateToken({
             userId: user._id.toString(),
             email: user.email,
-            fullName: user.fullName,
             role: user.role
-        },
-        token,
-        refreshToken
-    };
+        });
+
+        const refreshToken = generateRefreshToken({
+            userId: user._id.toString(),
+            email: user.email,
+            role: user.role
+        });
+
+        // 📝 Audit log - Login success
+        await AuditService.log({
+            action: 'LOGIN_SUCCESS',
+            userId: user._id.toString(),
+            userEmail: user.email,
+            userRole: user.role,
+            ipAddress,
+            userAgent,
+            description: `User logged in successfully`,
+            success: true
+        });
+
+        return {
+            user: {
+                userId: user._id.toString(),
+                email: user.email,
+                fullName: user.fullName,
+                role: user.role
+            },
+            token,
+            refreshToken
+        };
+    } catch (error) {
+        // Error already logged in specific cases above
+        throw error;
+    }
 };
 
 /**

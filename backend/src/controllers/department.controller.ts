@@ -140,14 +140,14 @@ export class DepartmentController {
 
     /**
      * @route   DELETE /api/v1/departments/:id
-     * @desc    Xóa phòng ban
+     * @desc    Xóa phòng ban (soft delete)
      * @access  Private/Admin
      */
     deleteDepartment = asyncHandler(async (req: Request, res: Response) => {
         /* 
             #swagger.tags = ['Departments']
-            #swagger.summary = 'Delete department'
-            #swagger.description = 'Delete a department'
+            #swagger.summary = 'Delete department (soft delete)'
+            #swagger.description = 'Soft delete a department (only if no employees)'
         */
         const departmentId = req.params.id;
         await this.departmentService.deleteDepartment(departmentId);
@@ -155,6 +155,27 @@ export class DepartmentController {
         res.status(200).json({
             success: true,
             message: 'Department deleted successfully'
+        });
+    });
+
+    /**
+     * @route   PATCH /api/v1/departments/:id/restore
+     * @desc    Khôi phục phòng ban đã xóa
+     * @access  Private/Admin
+     */
+    restoreDepartment = asyncHandler(async (req: Request, res: Response) => {
+        /* 
+            #swagger.tags = ['Departments']
+            #swagger.summary = 'Restore deleted department'
+            #swagger.description = 'Restore a soft deleted department'
+        */
+        const departmentId = req.params.id;
+        const department = await this.departmentService.restoreDepartment(departmentId);
+
+        res.status(200).json({
+            success: true,
+            message: 'Department restored successfully',
+            data: department
         });
     });
 }

@@ -117,20 +117,38 @@ router.put('/:id',
 
 /**
  * @route   DELETE /api/v1/departments/:id
- * @desc    Xóa phòng ban
+ * @desc    Xóa phòng ban (soft delete)
  * @access  Private/Admin
  */
 router.delete('/:id',
     /* 
         #swagger.tags = ['Departments']
         #swagger.path = '/departments/{id}'
-        #swagger.summary = 'Xóa phòng ban'
-        #swagger.description = 'Xóa một phòng ban'
+        #swagger.summary = 'Xóa phòng ban (soft delete)'
+        #swagger.description = 'Xóa một phòng ban (chỉ đánh dấu xóa)'
         #swagger.security = [{ "bearerAuth": [] }]
     */
     admin,
     validate(departmentIdSchema),
     departmentController.deleteDepartment
+);
+
+/**
+ * @route   PATCH /api/v1/departments/:id/restore
+ * @desc    Khôi phục phòng ban đã xóa
+ * @access  Private/Admin
+ */
+router.patch('/:id/restore',
+    /* 
+        #swagger.tags = ['Departments']
+        #swagger.path = '/departments/{id}/restore'
+        #swagger.summary = 'Khôi phục phòng ban'
+        #swagger.description = 'Khôi phục một phòng ban đã bị xóa'
+        #swagger.security = [{ "bearerAuth": [] }]
+    */
+    admin,
+    validate(departmentIdSchema),
+    departmentController.restoreDepartment
 );
 
 export default router;

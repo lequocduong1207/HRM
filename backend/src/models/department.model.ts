@@ -5,6 +5,8 @@ export interface DepartmentDocument extends Document {
   description?: string;
   managerId?: Schema.Types.ObjectId;
   employeeCount?: number;
+  isDeleted?: boolean;
+  deletedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -32,6 +34,14 @@ const DepartmentSchema = new Schema<DepartmentDocument>(
         type: Number,
         default: 0,
         min: 0,
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false,
+    },
+    deletedAt: {
+        type: Date,
+        default: null,
     },
   },
     { timestamps: true }

@@ -27,6 +27,9 @@ export interface IUser extends Document {
   updatedAt: Date;
   resetPasswordToken?: string | null;
   resetPasswordExpires?: Date | null;
+  // Account Lockout fields
+  loginAttempts: number;
+  lockUntil?: Date | null;
 }
 
 /**
@@ -95,6 +98,17 @@ const userSchema = new Schema<IUser>(
     resetPasswordExpires: {
       type: Date,
       default: null
+    },
+    
+    // 🔒 Account Lockout fields
+    loginAttempts: {
+      type: Number,
+      default: 0,
+      required: true
+    },
+    lockUntil: {
+      type: Date,
+      default: null
     }
   },
   {
@@ -112,5 +126,52 @@ userSchema.set("toJSON", {
     return ret;
   }
 });
+
+/**
+ * 🔒 Virtual field: isLocked
+ * Check if account is currently locked
+ */
+userSchema.virtual('isLocked').get(function() {
+  // Check if lockUntil exists and is in the future
+  return !!(this.lockUntil && this.lockUntil > new Date());
+});
+
+/**
+ * 🔒 Method: incrementLoginAttempts
+ * Increment failed login attempts and lock account if needed
+ */
+userSchema.methods.incrementLoginAttempts = async function() {
+  // If we have a previous lock that has expired, restart at 1
+  if (this.lockUntil && this.lockUntil < new Date()) {
+    return await this.updateOne({
+      $set: { loginAttempts: 1 },
+      $unset: { lockUntil: 1 }
+    });
+  }
+  
+  // Otherwise increment attempts
+  const updates: any = { $inc: { loginAttempts: 1 } };
+  
+  // Lock the account if we've reached max attempts (5)
+  const maxAttempts = 5;
+  const lockTime = 30 * 60 * 1000; // 30 minutes
+  
+  if (this.loginAttempts + 1 >= maxAttempts && !this.isLocked) {
+    updates.$set = { lockUntil: new Date(Date.now() + lockTime) };
+  }
+  
+  return await this.updateOne(updates);
+};
+
+/**
+ * 🔒 Method: resetLoginAttempts
+ * Reset login attempts after successful login
+ */
+userSchema.methods.resetLoginAttempts = async function() {
+  return await this.updateOne({
+    $set: { loginAttempts: 0 },
+    $unset: { lockUntil: 1 }
+  });
+};
 
 export const User = model<IUser>("User", userSchema);
