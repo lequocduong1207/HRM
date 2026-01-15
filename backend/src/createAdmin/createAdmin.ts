@@ -1,18 +1,19 @@
+import { IUser } from "../models/user.model.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import { UserEntity } from "../entities/user.entity.js";
 import { hashPassword } from "../utills/password.js";
-import { poolConnect } from "../config/db.js";
+import { checkConnection } from "../config/db.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 async function createAdmin() {
     try {
-        // Đợi kết nối database
-        await poolConnect;
-        console.log("✅ Database connected!");
+        // Kiểm tra kết nối database
+        await checkConnection();
         
         const userRepository = new UserRepository();
         
         // Kiểm tra xem admin đã tồn tại chưa bằng email
-        const existingAdmin = await userRepository.findByEmail("admin@hrm.com");
+        const existingAdmin = await userRepository.checkEmailExists("admin@hrm.com");
         if (existingAdmin) {
             console.log("Admin account already exists!");
             return;
@@ -22,24 +23,16 @@ async function createAdmin() {
         const passwordHash = await hashPassword("12345678");
 
         // Tạo admin object với đầy đủ properties
-        const admin: Partial<UserEntity> = {
-            username: "admin",
+        const admin: Partial<IUser> = {
             email: "admin@hrm.com",
+            fullName: "System Administrator",
             passwordHash: passwordHash,
             role: 'admin',
-            employeeId: null,
             isActive: true,
-            lastLogin: null
         };
 
         // Lưu vào database
-        const createdAdmin = await userRepository.create(admin as {
-                username: string;
-                email: string;
-                passwordHash: string;
-                role: string;
-                employeeId?: number;
-        });
+        const createdAdmin = await userRepository.createUser(admin);
         console.log("✅ Admin account created successfully!", createdAdmin);
         process.exit(0);
         

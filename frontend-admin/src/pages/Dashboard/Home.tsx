@@ -1,7 +1,5 @@
 import PageMeta from "../../components/common/PageMeta";
 import ComponentCard from "../../components/common/ComponentCard";
-import LineChartOne from "../../components/charts/line/LineChartOne";
-import BarChartOne from "../../components/charts/bar/BarChartOne";
 import { UserCircleIcon, CalenderIcon } from "../../icons";
 
 export default function Home() {
@@ -92,12 +90,6 @@ export default function Home() {
       <div className="grid grid-cols-12 gap-4 md:gap-6 mb-6">
         {/* Line Chart */}
         <div className="col-span-12 xl:col-span-8">
-          <ComponentCard 
-            title="Biểu đồ chấm công theo tháng"
-            desc="Thống kê số lượng nhân viên chấm công đầy đủ"
-          >
-            <LineChartOne />
-          </ComponentCard>
         </div>
 
         {/* Recent Activities */}
@@ -135,12 +127,7 @@ export default function Home() {
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         {/* Bar Chart */}
         <div className="col-span-12 xl:col-span-7">
-          <ComponentCard 
-            title="Thống kê nhân viên mới theo tháng"
-            desc="Số lượng nhân viên được tuyển dụng trong năm"
-          >
-            <BarChartOne />
-          </ComponentCard>
+          
         </div>
 
         {/* Quick Actions */}

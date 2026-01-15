@@ -1,12 +1,17 @@
 import { EmployeeRepository } from '../repositories/employee.repository.js';
-import { EmployeeDocument } from '../models/employee.model.js';
+import { EmployeeDocument, EmployeeModel } from '../models/employee.model.js';
 import { AppError } from '../middlewares/error/error-handler.middleware.js';
+import mongoose from 'mongoose';
+import { DepartmentRepository } from '../repositories/department.repository.js';
+import { DepartmentModel } from '../models/department.model.js';
 
 export class EmployeeService {
     private EmployeeRepository: EmployeeRepository;
+    private departmentRepository: DepartmentRepository;
 
     constructor() {
         this.EmployeeRepository = new EmployeeRepository();
+        this.departmentRepository = new DepartmentRepository();
     }
 
     async getEmployeeById(employeeId: string) {
@@ -29,24 +34,119 @@ export class EmployeeService {
     }
 
     async createEmployee(data: Partial<EmployeeDocument>) {
-        const employee = await this.EmployeeRepository.create(data);
+        const session = await mongoose.startSession();
+
+        try {
+        session.startTransaction();
+
+        const employeeData = new EmployeeModel(data);
+        const employee = await employeeData.save({ session });
+
+        await DepartmentModel.findByIdAndUpdate(
+            data.departmentId,
+            { $inc: { employeeCount: 1 } },
+            { session }
+        );
+
+        await session.commitTransaction();
         return employee;
+
+        } catch (err) {
+        await session.abortTransaction();
+        throw err;
+
+        } finally {
+        session.endSession();
+        }
     }
 
     async updateEmployee(employeeId: string, data: Partial<EmployeeDocument>) {
-        const updatedEmployee = await this.EmployeeRepository.update(employeeId, data);
-        if (!updatedEmployee) {
-            throw new AppError('Employee not found', 404);
+        const session = await mongoose.startSession();
+
+        try {
+            session.startTransaction();
+
+            // Lấy thông tin nhân viên hiện tại
+            const currentEmployee = await this.EmployeeRepository.findById(employeeId);
+            if (!currentEmployee) {
+                throw new AppError('Employee not found', 404);
+            }
+
+            // Nếu có thay đổi phòng ban
+            if (data.departmentId && data.departmentId.toString() !== currentEmployee.departmentId.toString()) {
+                // Giảm employeeCount của phòng ban cũ
+                await DepartmentModel.findByIdAndUpdate(
+                    currentEmployee.departmentId,
+                    { $inc: { employeeCount: -1 } },
+                    { session }
+                );
+
+                // Tăng employeeCount của phòng ban mới
+                await DepartmentModel.findByIdAndUpdate(
+                    data.departmentId,
+                    { $inc: { employeeCount: 1 } },
+                    { session }
+                );
+            }
+
+            // Cập nhật nhân viên
+            const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
+                employeeId,
+                data,
+                { new: true, runValidators: true, session }
+            );
+
+            if (!updatedEmployee) {
+                throw new AppError('Employee not found', 404);
+            }
+
+            await session.commitTransaction();
+            return updatedEmployee;
+
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+
+        } finally {
+            session.endSession();
         }
-        return updatedEmployee;
     }
 
     async deleteEmployee(employeeId: string) {
-        const deleted = await this.EmployeeRepository.delete(employeeId);
-        if (!deleted) {
-            throw new AppError('Employee not found', 404);
+        const session = await mongoose.startSession();
+
+        try {
+            session.startTransaction();
+
+            // Lấy thông tin nhân viên trước khi xóa
+            const employee = await this.EmployeeRepository.findById(employeeId);
+            if (!employee) {
+                throw new AppError('Employee not found', 404);
+            }
+
+            // Xóa nhân viên
+            const deleted = await EmployeeModel.findByIdAndDelete(employeeId, { session });
+            if (!deleted) {
+                throw new AppError('Employee not found', 404);
+            }
+
+            // Giảm employeeCount của phòng ban
+            await DepartmentModel.findByIdAndUpdate(
+                employee.departmentId,
+                { $inc: { employeeCount: -1 } },
+                { session }
+            );
+
+            await session.commitTransaction();
+            return deleted;
+
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+
+        } finally {
+            session.endSession();
         }
-        return deleted;
     }
 
     async updateEmployeeStatus(employeeId: string, isActive: boolean) {

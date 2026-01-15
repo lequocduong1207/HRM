@@ -4,6 +4,7 @@ export interface DepartmentDocument extends Document {
   name: string;
   description?: string;
   managerId?: Schema.Types.ObjectId;
+  employeeCount?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -26,6 +27,11 @@ const DepartmentSchema = new Schema<DepartmentDocument>(
         ref: 'Employee',
         unique: true,
         sparse: true,
+    },
+    employeeCount: {
+        type: Number,
+        default: 0,
+        min: 0,
     },
   },
     { timestamps: true }

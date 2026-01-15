@@ -1,7 +1,6 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
-import BarChartOne from "../../components/charts/bar/BarChartOne";
 
 export default function AttendanceHistory() {
   const monthlyData = [
@@ -48,12 +47,7 @@ export default function AttendanceHistory() {
         </div>
 
         {/* Chart */}
-        <ComponentCard
-          title="Biểu đồ chấm công theo tháng"
-          desc="Thống kê chi tiết 6 tháng gần đây"
-        >
-          <BarChartOne />
-        </ComponentCard>
+       
 
         {/* Monthly Breakdown */}
         <ComponentCard title="Chi tiết theo tháng">

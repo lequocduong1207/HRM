@@ -1,16 +1,17 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import type { CreateEmployeeRequest, UserRole } from "../../types";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
+import { employeeService } from "../../api/employees.api";
+import type { CreateEmployeeRequest } from "../../types";
 import { getErrorMessage } from "../../utils";
 import { useDepartments } from "../../hooks/useDepartments";
 import { useEmployees } from "../../hooks/useEmployees";
-import { useUsers } from "../../hooks/useUsers";
 
-export default function AddEmployee() {
+export default function EditEmployee() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   
   const [formData, setFormData] = useState<Partial<CreateEmployeeRequest>>({
     fullName: '',
@@ -25,23 +26,49 @@ export default function AddEmployee() {
   });
   
   const { departments, fetchDepartments } = useDepartments();
-  const { createEmployee } = useEmployees();
-  const { createUser } = useUsers();
+  const { updateEmployee } = useEmployees();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  
-  // Account creation states
-  const [createAccount, setCreateAccount] = useState(false);
-  const [accountData, setAccountData] = useState<{
-    password: string;
-    confirmPassword: string;
-    role: UserRole;
-  }>({
-    password: '',
-    confirmPassword: '',
-    role: 'employee'
-  });
+
+  // Fetch employee data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) {
+        setError('ID nhân viên không hợp lệ');
+        setLoadingData(false);
+        return;
+      }
+
+      try {
+        setLoadingData(true);
+        
+        // Fetch employee details
+        const employee = await employeeService.getEmployeeById(id);
+        
+        // Pre-fill form with employee data
+        setFormData({
+          fullName: employee.fullName,
+          email: employee.email,
+          phoneNumber: employee.phoneNumber,
+          dateOfBirth: employee.dateOfBirth ? new Date(employee.dateOfBirth).toISOString().split('T')[0] : '',
+          address: employee.address || '',
+          position: employee.position,
+          departmentId: typeof employee.departmentId === 'string' ? employee.departmentId : employee.departmentId._id,
+          salary: employee.salary,
+          hireDate: new Date(employee.hireDate).toISOString().split('T')[0],
+        });
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError(getErrorMessage(err));
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    
+    fetchData();
+  }, [id]);
 
   // Validation functions
   const validateDateOfBirth = (dateOfBirth: string): string | null => {
@@ -71,24 +98,14 @@ export default function AddEmployee() {
     return null;
   };
 
-  const validateHireDate = (hireDate: string): string | null => {
-    if (!hireDate) return null;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to compare only dates
-    
-    const hireDateObj = new Date(hireDate);
-    hireDateObj.setHours(0, 0, 0, 0);
-    
-    if (hireDateObj < today) {
-      return 'Ngày vào làm phải từ hôm nay trở đi';
-    }
-    
-    return null;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!id) {
+      setError('ID nhân viên không hợp lệ');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -108,80 +125,22 @@ export default function AddEmployee() {
         }
       }
 
-      // Validate hire date
-      const hireDateError = validateHireDate(formData.hireDate);
-      if (hireDateError) {
-        throw new Error(hireDateError);
+      // Update employee
+      const result = await updateEmployee(id, formData as CreateEmployeeRequest);
+
+      if (!result.success) {
+        throw new Error(result.message || 'Không thể cập nhật nhân viên');
       }
 
-      // Validate account creation if enabled
-      if (createAccount) {
-        if (!accountData.password || !accountData.confirmPassword) {
-          throw new Error('Vui lòng nhập mật khẩu');
-        }
-        if (accountData.password !== accountData.confirmPassword) {
-          throw new Error('Mật khẩu xác nhận không khớp');
-        }
-        if (accountData.password.length < 6) {
-          throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
-        }
-      }
-
-      // Step 1: Create employee
-      const employeeResult = await createEmployee(formData as CreateEmployeeRequest);
-
-      if (!employeeResult.success) {
-        throw new Error(employeeResult.message || 'Không thể tạo nhân viên');
-      }
-
-      // Step 2: Create user account if checkbox is checked
-      if (createAccount && employeeResult.data) {
-        try {
-          const userResult = await createUser({
-            email: formData.email!,
-            password: accountData.password,
-            fullName: formData.fullName!,
-            role: accountData.role
-          });
-
-          if (!userResult.success) {
-            // Employee created but user creation failed
-            setError(`Nhân viên đã được tạo nhưng tài khoản không thể tạo: ${userResult.message}`);
-          }
-        } catch (userErr) {
-          // Employee created but user creation failed
-          setError(`Nhân viên đã được tạo nhưng tài khoản không thể tạo: ${getErrorMessage(userErr)}`);
-        }
-      }
+      // Refresh departments để cập nhật số lượng nhân viên
+      await fetchDepartments();
 
       setSuccess(true);
       
-      // Refresh departments để cập nhật số lượng nhân viên
-      await fetchDepartments();
-      
-      // Reset form
-      setFormData({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        dateOfBirth: '',
-        address: '',
-        position: '',
-        departmentId: '',
-        salary: 0,
-        hireDate: '',
-      });
-      setAccountData({
-        password: '',
-        confirmPassword: '',
-        role: 'employee'
-      });
-      setCreateAccount(false);
-      
-      // Redirect after 2 seconds
+      // Redirect after 1.5 seconds
       setTimeout(() => {
         navigate('/employees');
-      }, 2000);
+      }, 1500);
     } catch (err: any) {
       setError(getErrorMessage(err));
     } finally {
@@ -198,13 +157,31 @@ export default function AddEmployee() {
     });
   };
 
+  if (loadingData) {
+    return (
+      <>
+        <PageMeta
+          title="Chỉnh sửa nhân viên | HRM System"
+          description="Chỉnh sửa thông tin nhân viên"
+        />
+        <PageBreadcrumb pageTitle="Chỉnh sửa nhân viên" />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+            <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageMeta
-        title="Thêm nhân viên mới | HRM System"
-        description="Thêm nhân viên mới vào hệ thống"
+        title="Chỉnh sửa nhân viên | HRM System"
+        description="Chỉnh sửa thông tin nhân viên"
       />
-      <PageBreadcrumb pageTitle="Thêm nhân viên mới" />
+      <PageBreadcrumb pageTitle="Chỉnh sửa nhân viên" />
 
       {/* Hiển thị trạng thái loading, error, success */}
       {loading && (
@@ -219,9 +196,7 @@ export default function AddEmployee() {
       )}
       {success && (
         <div className="mb-4 rounded bg-green-100 px-4 py-2 text-green-700 dark:bg-green-900/40 dark:text-green-200">
-          {createAccount 
-            ? '✓ Thêm nhân viên và tạo tài khoản đăng nhập thành công!' 
-            : '✓ Thêm nhân viên thành công!'}
+          ✓ Cập nhật thông tin nhân viên thành công!
         </div>
       )}
 
@@ -274,21 +249,19 @@ export default function AddEmployee() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                    Ngày sinh
-                  </label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth ?? ""}
-                    onChange={handleChange}
-                    max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 65)).toISOString().split('T')[0]}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  Ngày sinh
+                </label>
+                <input
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth ?? ""}
+                  onChange={handleChange}
+                  max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 65)).toISOString().split('T')[0]}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
               </div>
 
               <div>
@@ -353,9 +326,11 @@ export default function AddEmployee() {
                   value={formData.hireDate ?? ""}
                   onChange={handleChange}
                   required
-                  min={new Date().toISOString().split('T')[0]}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Lưu ý: Có thể chỉnh sửa ngày vào làm trong quá khứ
+                </p>
               </div>
 
               <div>
@@ -382,91 +357,6 @@ export default function AddEmployee() {
           </ComponentCard>
         </div>
 
-        {/* Account Information (Optional) */}
-        <div className="mt-6">
-          <ComponentCard 
-            title="Tài khoản đăng nhập" 
-            desc="Tạo tài khoản cho nhân viên để đăng nhập vào hệ thống"
-          >
-            <div className="space-y-4">
-              {/* Checkbox to enable account creation */}
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="createAccount"
-                  checked={createAccount}
-                  onChange={(e) => setCreateAccount(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-                />
-                <label 
-                  htmlFor="createAccount" 
-                  className="ml-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Tạo tài khoản đăng nhập cho nhân viên này
-                </label>
-              </div>
-
-              {/* Account fields - only show if checkbox is checked */}
-              {createAccount && (
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                  <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
-                    <p className="text-sm text-blue-800 dark:text-blue-300">
-                      ℹ️ Email nhân viên sẽ được dùng làm tên đăng nhập
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                      Mật khẩu <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      value={accountData.password}
-                      onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
-                      required={createAccount}
-                      minLength={6}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                      placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                      Xác nhận mật khẩu <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      value={accountData.confirmPassword}
-                      onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
-                      required={createAccount}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                      placeholder="Nhập lại mật khẩu"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
-                      Vai trò <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={accountData.role}
-                      onChange={(e) => setAccountData({ ...accountData, role: e.target.value as UserRole })}
-                      required={createAccount}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    >
-                      <option value="employee">Nhân viên (Employee)</option>
-                      <option value="admin">Quản trị viên (Admin)</option>
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Vai trò sẽ quyết định quyền truy cập của nhân viên trong hệ thống
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </ComponentCard>
-        </div>
-
         {/* Action Buttons */}
         <div className="mt-6 flex justify-end gap-4">
           <button
@@ -482,7 +372,7 @@ export default function AddEmployee() {
             disabled={loading}
             className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600"
           >
-            {loading ? 'Đang xử lý...' : 'Thêm nhân viên'}
+            {loading ? 'Đang xử lý...' : 'Cập nhật nhân viên'}
           </button>
         </div>
       </form>

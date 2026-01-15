@@ -1,20 +1,33 @@
-import axios from './axios.customize.ts';
-
-export interface Department {
-    departmentId: number;
-    name: string;
-    description: string | null;
-    managerId: number | null;
-    managerName: string | null;  
-    employeeCount: number;        
-    createdAt: Date;
-    updatedAt: Date;
-}
+import axios from './axios.customize';
+import type { IDepartment, CreateDepartmentRequest } from '../types';
 
 export const departmentService = {
-  getAllDepartments: async () => axios.get(`/departments`).then(res => res.data),
-  getDepartmentById: async (id: number) => axios.get(`/departments/${id}`).then(res => res.data),
-  createDepartment: async (data: Partial<Department>) => axios.post(`/departments`, data).then(res => res.data),
-  updateDepartment: async (id: number, data: Partial<Department>) => axios.put(`/departments/${id}`, data).then(res => res.data),
-  deleteDepartment: async (id: number) => axios.delete(`/departments/${id}`).then(res => res.data),
+  getAllDepartments: async (): Promise<IDepartment[]> => {
+    const response = await axios.get('/departments');
+    return response.data; 
+  },
+  
+  getDepartmentById: async (id: string): Promise<IDepartment> => {
+    const response = await axios.get(`/departments/${id}`);
+    return response.data;
+  },
+  
+  createDepartment: async (data: CreateDepartmentRequest): Promise<IDepartment> => {
+    const response = await axios.post('/departments', data);
+    return response.data;
+  },
+  
+  updateDepartment: async (id: string, data: Partial<CreateDepartmentRequest>): Promise<IDepartment> => {
+    const response = await axios.put(`/departments/${id}`, data);
+    return response.data;
+  },
+  
+  deleteDepartment: async (id: string): Promise<void> => {
+    await axios.delete(`/departments/${id}`);
+  },
+
+  restoreDepartment: async (id: string): Promise<IDepartment> => {
+    const response = await axios.patch(`/departments/${id}/restore`);
+    return response.data;
+  },
 };

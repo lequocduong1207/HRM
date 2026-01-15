@@ -1,95 +1,94 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/ui/table";
 import Badge from "../../components/ui/badge/Badge";
 import { CalenderIcon } from "../../icons";
-
-interface AttendanceRecord {
-  id: number;
-  employeeId: string;
-  employeeName: string;
-  department: string;
-  date: string;
-  checkIn: string;
-  checkOut: string;
-  workHours: string;
-  status: string;
-}
+import type { IAttendance, IEmployee, IDepartment } from "../../types";
+import { formatDate } from "../../utils";
+import { useAttendances } from "../../hooks/useAttendances";
+import { useEmployees } from "../../hooks/useEmployees";
+import { useDepartments } from "../../hooks/useDepartments";
 
 export default function AttendanceList() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [attendance] = useState<AttendanceRecord[]>([
-    {
-      id: 1,
-      employeeId: "NV001",
-      employeeName: "Nguyễn Văn A",
-      department: "Phát triển phần mềm",
-      date: "15/12/2025",
-      checkIn: "08:30",
-      checkOut: "17:30",
-      workHours: "8h 30m",
-      status: "Present",
-    },
-    {
-      id: 2,
-      employeeId: "NV002",
-      employeeName: "Trần Thị B",
-      department: "Nhân sự",
-      date: "15/12/2025",
-      checkIn: "08:45",
-      checkOut: "17:45",
-      workHours: "8h 30m",
-      status: "Late",
-    },
-    {
-      id: 3,
-      employeeId: "NV003",
-      employeeName: "Lê Văn C",
-      department: "Kế toán",
-      date: "15/12/2025",
-      checkIn: "08:15",
-      checkOut: "17:15",
-      workHours: "8h 30m",
-      status: "Present",
-    },
-    {
-      id: 4,
-      employeeId: "NV004",
-      employeeName: "Phạm Thị D",
-      department: "Marketing",
-      date: "15/12/2025",
-      checkIn: "-",
-      checkOut: "-",
-      workHours: "0h",
-      status: "Absent",
-    },
-    {
-      id: 5,
-      employeeId: "NV005",
-      employeeName: "Hoàng Văn E",
-      department: "Phát triển phần mềm",
-      date: "15/12/2025",
-      checkIn: "09:30",
-      checkOut: "18:30",
-      workHours: "8h 30m",
-      status: "Late",
-    },
-  ]);
+  const { attendances, loading: attendancesLoading, error: attendancesError, fetchAttendances } = useAttendances();
+  const { employees, loading: employeesLoading } = useEmployees();
+  const { departments, loading: departmentsLoading } = useDepartments();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const loading = attendancesLoading || employeesLoading || departmentsLoading;
+  const error = attendancesError;
+
+  useEffect(() => {
+    fetchAttendances({ date: selectedDate });
+  }, [selectedDate, fetchAttendances]);
+
+  const getEmployeeName = (employeeId: string | IEmployee) => {
+    if (typeof employeeId === 'object') return employeeId.fullName;
+    const emp = employees.find(e => e._id === employeeId);
+    return emp?.fullName || 'N/A';
+  };
+
+  const getDepartmentName = (employeeId: string | IEmployee) => {
+    let empId: string;
+    if (typeof employeeId === 'object') {
+      empId = employeeId._id;
+    } else {
+      empId = employeeId;
+    }
+    const emp = employees.find(e => e._id === empId);
+    if (!emp) return 'N/A';
+    const deptId = typeof emp.departmentId === 'string' ? emp.departmentId : emp.departmentId._id;
+    const dept = departments.find(d => d._id === deptId);
+    return dept?.name || 'N/A';
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Present":
-        return <Badge color="success">Đúng giờ</Badge>;
-      case "Late":
+      case "present":
+        return <Badge color="success">Có mặt</Badge>;
+      case "late":
         return <Badge color="warning">Đi muộn</Badge>;
-      case "Absent":
+      case "absent":
         return <Badge color="error">Vắng mặt</Badge>;
+      case "leave":
+        return <Badge color="light">Nghỉ phép</Badge>;
       default:
         return <Badge color="light">{status}</Badge>;
     }
   };
+
+  // Filter attendances based on search term
+  const filteredAttendances = attendances.filter(attendance => {
+    const searchLower = searchTerm.toLowerCase();
+    const empName = getEmployeeName(attendance.employeeId).toLowerCase();
+    const deptName = getDepartmentName(attendance.employeeId).toLowerCase();
+    const empId = typeof attendance.employeeId === 'string' ? attendance.employeeId : attendance.employeeId._id;
+    
+    return (
+      empName.includes(searchLower) ||
+      deptName.includes(searchLower) ||
+      empId.toLowerCase().includes(searchLower)
+    );
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500 dark:text-gray-400">Đang tải dữ liệu chấm công...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-500">Lỗi: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -108,8 +107,10 @@ export default function AttendanceList() {
                 <CalenderIcon className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Đúng giờ</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Có mặt</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {attendances.filter(a => a.status === 'present').length}
+                </p>
               </div>
             </div>
           </div>
@@ -121,7 +122,9 @@ export default function AttendanceList() {
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Đi muộn</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">2</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {attendances.filter(a => a.status === 'late').length}
+                </p>
               </div>
             </div>
           </div>
@@ -133,7 +136,9 @@ export default function AttendanceList() {
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Vắng mặt</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">1</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {attendances.filter(a => a.status === 'absent').length}
+                </p>
               </div>
             </div>
           </div>
@@ -145,7 +150,9 @@ export default function AttendanceList() {
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Tổng số</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">6</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {attendances.length}
+                </p>
               </div>
             </div>
           </div>
@@ -155,6 +162,13 @@ export default function AttendanceList() {
           {/* Filters */}
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Tìm kiếm nhân viên, phòng ban..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
               <input
                 type="date"
                 value={selectedDate}
@@ -212,34 +226,42 @@ export default function AttendanceList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {attendance.map((record) => (
-                    <TableRow key={record.id} className="border-b border-gray-100 last:border-0 dark:border-white/[0.05]">
-                      <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                        {record.employeeId}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-900 dark:text-white">
-                        {record.employeeName}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {record.department}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {record.date}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {record.checkIn}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {record.checkOut}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                        {record.workHours}
-                      </TableCell>
-                      <TableCell className="px-5 py-4">
-                        {getStatusBadge(record.status)}
+                  {filteredAttendances.length === 0 ? (
+                    <TableRow>
+                      <TableCell className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                        Không có dữ liệu chấm công cho ngày này
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredAttendances.map((record) => (
+                      <TableRow key={record._id} className="border-b border-gray-100 last:border-0 dark:border-white/[0.05]">
+                        <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                          #{(typeof record.employeeId === 'string' ? record.employeeId : record.employeeId._id).slice(-6).toUpperCase()}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm text-gray-900 dark:text-white">
+                          {getEmployeeName(record.employeeId)}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {getDepartmentName(record.employeeId)}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {formatDate(record.date)}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {record.checkInTime || '-'}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {record.checkOutTime || '-'}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                          -
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          {getStatusBadge(record.status)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>

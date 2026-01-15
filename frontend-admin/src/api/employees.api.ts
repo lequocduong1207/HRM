@@ -1,26 +1,42 @@
-import axios from './axios.customize.ts';
-
-export interface Employee {
-    employeeId: string;
-    fullName: string;
-    dob: Date | null;
-    gender: "Male" | "Female" | "Other" | null;
-    email: string | null;
-    phone: string | null;
-    address: string | null;
-    nationalId: string | null;         
-    departmentId: number | null;
-    position: string | null;
-    hireDate: Date | null;
-    employmentStatus: 'active' | 'inactive' | 'terminated' | 'resigned';
-    createdAt: Date;
-    updatedAt: Date;
-}
+import axios from './axios.customize';
+import type { IEmployee, CreateEmployeeRequest } from '../types';
 
 export const employeeService = {
-  getAllEmployees: async () => axios.get(`/employees`).then(res => res.data),
-  getEmployeeById: async (id: number) => axios.get(`/employees/${id}`).then(res => res.data),
-  createEmployee: async (data: Partial<Employee>) => axios.post(`/employees`, data).then(res => res.data),
-  updateEmployee: async (id: number, data: Partial<Employee>) => axios.put(`/employees/${id}`, data).then(res => res.data),
-  deleteEmployee: async (id: number) => axios.delete(`/employees/${id}`).then(res => res.data),
+  getAllEmployees: async (): Promise<IEmployee[]> => {
+    const response = await axios.get('/employees');
+    return response.data;
+  },
+  
+  getEmployeeById: async (id: string): Promise<IEmployee> => {
+    const response = await axios.get(`/employees/${id}`);
+    return response.data;
+  },
+  
+  createEmployee: async (data: CreateEmployeeRequest): Promise<IEmployee> => {
+    const response = await axios.post('/employees', data);
+    return response.data;
+  },
+  
+  updateEmployee: async (id: string, data: Partial<CreateEmployeeRequest>): Promise<IEmployee> => {
+    const response = await axios.put(`/employees/${id}`, data);
+    return response.data;
+  },
+  
+  deleteEmployee: async (id: string): Promise<void> => {
+    await axios.delete(`/employees/${id}`);
+  },
+  
+  activateEmployee: async (id: string): Promise<void> => {
+    await axios.patch(`/employees/${id}/activate`);
+  },
+  
+  deactivateEmployee: async (id: string): Promise<void> => {
+    await axios.patch(`/employees/${id}/deactivate`);
+  },
+  
+  getEmployeesByDepartment: async (departmentId: string): Promise<IEmployee[]> => {
+    const response = await axios.get(`/employees/department/${departmentId}`);
+    console.log('Employees in department:', response.data);
+    return response.data.data;
+  },
 };
