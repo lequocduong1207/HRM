@@ -4,22 +4,22 @@ import type { IUser, CreateUserRequest } from '../types';
 export const userService = {
   getAllUsers: async (): Promise<IUser[]> => {
     const response = await axios.get('/users');
-    return response.data;
+    return response as any;
   },
   
   getUserById: async (id: string): Promise<IUser> => {
     const response = await axios.get(`/users/${id}`);
-    return response.data;
+    return response as any;
   },
   
   createUser: async (data: CreateUserRequest): Promise<IUser> => {
     const response = await axios.post('/users', data);
-    return response.data;
+    return response as any;
   },
   
   updateUser: async (id: string, data: Partial<CreateUserRequest>): Promise<IUser> => {
     const response = await axios.put(`/users/${id}`, data);
-    return response.data;
+    return response as any;
   },
   
   deleteUser: async (id: string): Promise<void> => {
@@ -28,12 +28,12 @@ export const userService = {
   
   activateUser: async (id: string): Promise<IUser> => {
     const response = await axios.patch(`/users/${id}/activate`);
-    return response.data;
+    return response as any;
   },
   
   deactivateUser: async (id: string): Promise<IUser> => {
     const response = await axios.patch(`/users/${id}/deactivate`);
-    return response.data;
+    return response as any;
   },
   
   changePassword: async (id: string, newPassword: string): Promise<void> => {

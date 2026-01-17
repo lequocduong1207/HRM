@@ -49,7 +49,6 @@ const navItems: NavItem[] = [
     icon: <TaskIcon />,
     name: "Nghỉ phép",
     subItems: [
-      { name: "Đơn nghỉ phép", path: "/leave", pro: false },
       { name: "Duyệt đơn", path: "/leave/approval", pro: false },
       { name: "Lịch sử nghỉ phép", path: "/leave/history", pro: false },
     ],

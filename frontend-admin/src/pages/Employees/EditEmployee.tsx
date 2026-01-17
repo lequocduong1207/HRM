@@ -1,161 +1,24 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
-import { employeeService } from "../../api/employees.api";
-import type { CreateEmployeeRequest } from "../../types";
-import { getErrorMessage } from "../../utils";
-import { useDepartments } from "../../hooks/useDepartments";
-import { useEmployees } from "../../hooks/useEmployees";
+import { useEditEmployeeLogic } from "../../hooks/useEditEmployeeLogic";
 
+/**
+ * EditEmployee Page - Presentation Component
+ * Tất cả logic đã được tách ra useEditEmployeeLogic hook
+ */
 export default function EditEmployee() {
-  const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  
-  const [formData, setFormData] = useState<Partial<CreateEmployeeRequest>>({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    dateOfBirth: '',
-    address: '',
-    position: '',
-    departmentId: '',
-    salary: 0,
-    hireDate: '',
-  });
-  
-  const { departments, fetchDepartments } = useDepartments();
-  const { updateEmployee } = useEmployees();
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  // Fetch employee data on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) {
-        setError('ID nhân viên không hợp lệ');
-        setLoadingData(false);
-        return;
-      }
-
-      try {
-        setLoadingData(true);
-        
-        // Fetch employee details
-        const employee = await employeeService.getEmployeeById(id);
-        
-        // Pre-fill form with employee data
-        setFormData({
-          fullName: employee.fullName,
-          email: employee.email,
-          phoneNumber: employee.phoneNumber,
-          dateOfBirth: employee.dateOfBirth ? new Date(employee.dateOfBirth).toISOString().split('T')[0] : '',
-          address: employee.address || '',
-          position: employee.position,
-          departmentId: typeof employee.departmentId === 'string' ? employee.departmentId : employee.departmentId._id,
-          salary: employee.salary,
-          hireDate: new Date(employee.hireDate).toISOString().split('T')[0],
-        });
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-        setError(getErrorMessage(err));
-      } finally {
-        setLoadingData(false);
-      }
-    };
-    
-    fetchData();
-  }, [id]);
-
-  // Validation functions
-  const validateDateOfBirth = (dateOfBirth: string): string | null => {
-    if (!dateOfBirth) return null;
-    
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    
-    if (birthDate >= today) {
-      return 'Ngày sinh phải nhỏ hơn ngày hiện tại';
-    }
-    
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    const dayDiff = today.getDate() - birthDate.getDate();
-    
-    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-    
-    if (actualAge < 18) {
-      return 'Nhân viên phải từ 18 tuổi trở lên';
-    }
-    
-    if (actualAge > 65) {
-      return 'Nhân viên không được vượt quá 65 tuổi';
-    }
-    
-    return null;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!id) {
-      setError('ID nhân viên không hợp lệ');
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      // Validate required fields
-      if (!formData.fullName || !formData.email || !formData.phoneNumber || 
-          !formData.departmentId || !formData.position || !formData.hireDate || !formData.salary) {
-        throw new Error('Vui lòng điền đầy đủ các trường bắt buộc');
-      }
-
-      // Validate date of birth
-      if (formData.dateOfBirth) {
-        const dobError = validateDateOfBirth(formData.dateOfBirth);
-        if (dobError) {
-          throw new Error(dobError);
-        }
-      }
-
-      // Update employee
-      const result = await updateEmployee(id, formData as CreateEmployeeRequest);
-
-      if (!result.success) {
-        throw new Error(result.message || 'Không thể cập nhật nhân viên');
-      }
-
-      // Refresh departments để cập nhật số lượng nhân viên
-      await fetchDepartments();
-
-      setSuccess(true);
-      
-      // Redirect after 1.5 seconds
-      setTimeout(() => {
-        navigate('/employees');
-      }, 1500);
-    } catch (err: any) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const {
+    formData,
+    handleChange,
+    departments,
+    loading,
+    loadingData,
+    error,
+    success,
+    handleSubmit,
+    navigate,
+  } = useEditEmployeeLogic();
 
   if (loadingData) {
     return (
@@ -240,8 +103,8 @@ export default function EditEmployee() {
                 </label>
                 <input
                   type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber ?? ""}
+                  name="phone"
+                  value={formData.phone ?? ""}
                   onChange={handleChange}
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -255,12 +118,44 @@ export default function EditEmployee() {
                 </label>
                 <input
                   type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth ?? ""}
+                  name="dob"
+                  value={formData.dob ?? ""}
                   onChange={handleChange}
                   max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
                   min={new Date(new Date().setFullYear(new Date().getFullYear() - 65)).toISOString().split('T')[0]}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  Giới tính
+                </label>
+                <select
+                  name="gender"
+                  value={formData.gender ?? ""}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                >
+                  <option value="">Chọn giới tính</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  CMND/CCCD
+                </label>
+                <input
+                  type="text"
+                  name="nationalId"
+                  value={formData.nationalId ?? ""}
+                  onChange={handleChange}
+                  maxLength={20}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Nhập số CMND/CCCD"
                 />
               </div>
 
@@ -295,7 +190,7 @@ export default function EditEmployee() {
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 >
                   <option value="">Chọn phòng ban</option>
-                  {departments.map(dep => (
+                  {(departments || []).map(dep => (
                     <option key={dep._id} value={dep._id}>{dep.name}</option>
                   ))}
                 </select>

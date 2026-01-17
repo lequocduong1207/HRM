@@ -1,202 +1,24 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
-import { useState } from "react";
 import { useNavigate } from "react-router";
-import type { CreateEmployeeRequest, UserRole } from "../../types";
-import { getErrorMessage } from "../../utils";
-import { useDepartments } from "../../hooks/useDepartments";
-import { useEmployees } from "../../hooks/useEmployees";
-import { useUsers } from "../../hooks/useUsers";
+import { useAddEmployeeLogic } from "../../hooks/useAddEmployeeLogic";
 
 export default function AddEmployee() {
   const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState<Partial<CreateEmployeeRequest>>({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    dateOfBirth: '',
-    address: '',
-    position: '',
-    departmentId: '',
-    salary: 0,
-    hireDate: '',
-  });
-  
-  const { departments, fetchDepartments } = useDepartments();
-  const { createEmployee } = useEmployees();
-  const { createUser } = useUsers();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  
-  // Account creation states
-  const [createAccount, setCreateAccount] = useState(false);
-  const [accountData, setAccountData] = useState<{
-    password: string;
-    confirmPassword: string;
-    role: UserRole;
-  }>({
-    password: '',
-    confirmPassword: '',
-    role: 'employee'
-  });
-
-  // Validation functions
-  const validateDateOfBirth = (dateOfBirth: string): string | null => {
-    if (!dateOfBirth) return null;
-    
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    
-    if (birthDate >= today) {
-      return 'Ngày sinh phải nhỏ hơn ngày hiện tại';
-    }
-    
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    const dayDiff = today.getDate() - birthDate.getDate();
-    
-    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-    
-    if (actualAge < 18) {
-      return 'Nhân viên phải từ 18 tuổi trở lên';
-    }
-    
-    if (actualAge > 65) {
-      return 'Nhân viên không được vượt quá 65 tuổi';
-    }
-    
-    return null;
-  };
-
-  const validateHireDate = (hireDate: string): string | null => {
-    if (!hireDate) return null;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to compare only dates
-    
-    const hireDateObj = new Date(hireDate);
-    hireDateObj.setHours(0, 0, 0, 0);
-    
-    if (hireDateObj < today) {
-      return 'Ngày vào làm phải từ hôm nay trở đi';
-    }
-    
-    return null;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      // Validate required fields
-      if (!formData.fullName || !formData.email || !formData.phoneNumber || 
-          !formData.departmentId || !formData.position || !formData.hireDate || !formData.salary) {
-        throw new Error('Vui lòng điền đầy đủ các trường bắt buộc');
-      }
-
-      // Validate date of birth
-      if (formData.dateOfBirth) {
-        const dobError = validateDateOfBirth(formData.dateOfBirth);
-        if (dobError) {
-          throw new Error(dobError);
-        }
-      }
-
-      // Validate hire date
-      const hireDateError = validateHireDate(formData.hireDate);
-      if (hireDateError) {
-        throw new Error(hireDateError);
-      }
-
-      // Validate account creation if enabled
-      if (createAccount) {
-        if (!accountData.password || !accountData.confirmPassword) {
-          throw new Error('Vui lòng nhập mật khẩu');
-        }
-        if (accountData.password !== accountData.confirmPassword) {
-          throw new Error('Mật khẩu xác nhận không khớp');
-        }
-        if (accountData.password.length < 6) {
-          throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
-        }
-      }
-
-      // Step 1: Create employee
-      const employeeResult = await createEmployee(formData as CreateEmployeeRequest);
-
-      if (!employeeResult.success) {
-        throw new Error(employeeResult.message || 'Không thể tạo nhân viên');
-      }
-
-      // Step 2: Create user account if checkbox is checked
-      if (createAccount && employeeResult.data) {
-        try {
-          const userResult = await createUser({
-            email: formData.email!,
-            password: accountData.password,
-            fullName: formData.fullName!,
-            role: accountData.role
-          });
-
-          if (!userResult.success) {
-            // Employee created but user creation failed
-            setError(`Nhân viên đã được tạo nhưng tài khoản không thể tạo: ${userResult.message}`);
-          }
-        } catch (userErr) {
-          // Employee created but user creation failed
-          setError(`Nhân viên đã được tạo nhưng tài khoản không thể tạo: ${getErrorMessage(userErr)}`);
-        }
-      }
-
-      setSuccess(true);
-      
-      // Refresh departments để cập nhật số lượng nhân viên
-      await fetchDepartments();
-      
-      // Reset form
-      setFormData({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        dateOfBirth: '',
-        address: '',
-        position: '',
-        departmentId: '',
-        salary: 0,
-        hireDate: '',
-      });
-      setAccountData({
-        password: '',
-        confirmPassword: '',
-        role: 'employee'
-      });
-      setCreateAccount(false);
-      
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate('/employees');
-      }, 2000);
-    } catch (err: any) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const {
+    formData,
+    handleChange,
+    loading,
+    error,
+    success,
+    departments,
+    createAccount,
+    setCreateAccount,
+    accountData,
+    setAccountData,
+    handleSubmit
+  } = useAddEmployeeLogic();
 
   return (
     <>
@@ -265,13 +87,18 @@ export default function AddEmployee() {
                 </label>
                 <input
                   type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber ?? ""}
+                  name="phone"
+                  value={formData.phone ?? ""}
                   onChange={handleChange}
                   required
+                  pattern="[0-9]{10,11}"
+                  maxLength={11}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="0901234567"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  10-11 chữ số
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -281,14 +108,60 @@ export default function AddEmployee() {
                   </label>
                   <input
                     type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth ?? ""}
+                    name="dob"
+                    value={formData.dob ?? ""}
                     onChange={handleChange}
-                    max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-                    min={new Date(new Date().setFullYear(new Date().getFullYear() - 65)).toISOString().split('T')[0]}
+                    max={(() => {
+                      const eighteenYearsAgo = new Date();
+                      eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+                      return eighteenYearsAgo.toISOString().split('T')[0];
+                    })()}
+                    min={(() => {
+                      const sixtyFiveYearsAgo = new Date();
+                      sixtyFiveYearsAgo.setFullYear(sixtyFiveYearsAgo.getFullYear() - 65);
+                      return sixtyFiveYearsAgo.toISOString().split('T')[0];
+                    })()}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Từ 18-65 tuổi
+                  </p>
                 </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                    Giới tính
+                  </label>
+                  <select
+                    name="gender"
+                    value={formData.gender ?? ""}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="">Chọn giới tính</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  CMND/CCCD
+                </label>
+                <input
+                  type="text"
+                  name="nationalId"
+                  value={formData.nationalId ?? ""}
+                  onChange={handleChange}
+                  pattern="[0-9]{9}|[0-9]{12}"
+                  maxLength={12}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Nhập số CMND/CCCD"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  9 số (CMND) hoặc 12 số (CCCD)
+                </p>
               </div>
 
               <div>
@@ -321,11 +194,18 @@ export default function AddEmployee() {
                   required
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 >
-                  <option value="">Chọn phòng ban</option>
-                  {departments.map(dep => (
+                  <option value="">
+                    {!departments || departments.length === 0 ? 'Đang tải phòng ban...' : 'Chọn phòng ban'}
+                  </option>
+                  {(departments || []).filter(dep => !dep.isDeleted).map(dep => (
                     <option key={dep._id} value={dep._id}>{dep.name}</option>
                   ))}
                 </select>
+                {departments && departments.filter(d => !d.isDeleted).length === 0 && (
+                  <p className="mt-1 text-xs text-red-500">
+                    Chưa có phòng ban nào. Vui lòng thêm phòng ban trước.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -353,9 +233,11 @@ export default function AddEmployee() {
                   value={formData.hireDate ?? ""}
                   onChange={handleChange}
                   required
-                  min={new Date().toISOString().split('T')[0]}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Ngày bắt đầu làm việc chính thức
+                </p>
               </div>
 
               <div>
@@ -368,9 +250,15 @@ export default function AddEmployee() {
                   value={formData.salary ?? ""}
                   onChange={handleChange}
                   required
+                  min="0"
+                  max="999999999"
+                  step="100000"
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="15000000"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Ví dụ: 15,000,000 VNĐ
+                </p>
               </div>
 
               <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
@@ -450,7 +338,7 @@ export default function AddEmployee() {
                     </label>
                     <select
                       value={accountData.role}
-                      onChange={(e) => setAccountData({ ...accountData, role: e.target.value as UserRole })}
+                      onChange={(e) => setAccountData({ ...accountData, role: e.target.value as 'employee' | 'admin' })}
                       required={createAccount}
                       className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     >

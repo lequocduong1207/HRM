@@ -4,22 +4,22 @@ import type { IEmployee, CreateEmployeeRequest } from '../types';
 export const employeeService = {
   getAllEmployees: async (): Promise<IEmployee[]> => {
     const response = await axios.get('/employees');
-    return response.data;
+    return response as any;
   },
   
   getEmployeeById: async (id: string): Promise<IEmployee> => {
     const response = await axios.get(`/employees/${id}`);
-    return response.data;
+    return response as any;
   },
   
   createEmployee: async (data: CreateEmployeeRequest): Promise<IEmployee> => {
     const response = await axios.post('/employees', data);
-    return response.data;
+    return response as any;
   },
   
   updateEmployee: async (id: string, data: Partial<CreateEmployeeRequest>): Promise<IEmployee> => {
     const response = await axios.put(`/employees/${id}`, data);
-    return response.data;
+    return response as any;
   },
   
   deleteEmployee: async (id: string): Promise<void> => {
@@ -36,7 +36,7 @@ export const employeeService = {
   
   getEmployeesByDepartment: async (departmentId: string): Promise<IEmployee[]> => {
     const response = await axios.get(`/employees/department/${departmentId}`);
-    console.log('Employees in department:', response.data);
-    return response.data.data;
+    console.log('Employees in department:', response);
+    return response as any;
   },
 };

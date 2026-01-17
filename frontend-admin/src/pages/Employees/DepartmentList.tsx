@@ -2,6 +2,7 @@ import { useState } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
+import { EmptyState } from "../../components/common/EmptyState";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../components/ui/table";
 import Badge from "../../components/ui/badge/Badge";
 import { TrashBinIcon } from "../../icons";
@@ -42,14 +43,14 @@ export default function DepartmentList() {
         alert('Lỗi: Không thể tạo phòng ban');
       }
     } catch (err) {
-      alert(err);
+      alert(err instanceof Error ? err.message : String(err));
     } finally {
       setSubmitting(false);
     }
   };
 
   // Filter departments based on search term and status
-  const filteredDepartments = departments.filter(dept => {
+  const filteredDepartments = (departments || []).filter(dept => {
     const searchLower = searchTerm.toLowerCase();
     const managerName = typeof dept.managerId === 'string' ? '' : (dept.managerId?.fullName || '').toLowerCase();
     
@@ -111,8 +112,8 @@ export default function DepartmentList() {
     
     try {
       const { employeeService } = await import('../../api/employees.api');
-      const employees = await employeeService.getEmployeesByDepartment(dept._id);
-      setDepartmentEmployees(employees);
+      const response: any = await employeeService.getEmployeesByDepartment(dept._id);
+      setDepartmentEmployees(response.data || response);
     } catch (err) {
       console.error('Failed to fetch employees:', err);
       alert('Không thể tải danh sách nhân viên');
@@ -147,143 +148,166 @@ export default function DepartmentList() {
 
       <div className="space-y-6">
         {/* Statistics */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               Tổng số phòng ban
             </p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {departments.length}
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              {(departments || []).filter(d => !d.isDeleted).length}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               Tổng nhân viên
             </p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {departments.reduce((sum, dept) => sum + (dept.employees?.length || 0), 0)}
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              {(departments || []).filter(d => !d.isDeleted).reduce((sum, dept) => sum + (dept.employeeCount || dept.employees?.length || 0), 0)}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               TB nhân viên/phòng
             </p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {departments.length > 0
-                ? Math.round(
-                    departments.reduce((sum, dept) => sum + (dept.employees?.length || 0), 0) /
-                      departments.length
-                  )
-                : 0}
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              {(() => {
+                const activeDepts = (departments || []).filter(d => !d.isDeleted);
+                return activeDepts.length > 0
+                  ? Math.round(
+                      activeDepts.reduce((sum, dept) => sum + (dept.employeeCount || dept.employees?.length || 0), 0) /
+                        activeDepts.length
+                    )
+                  : 0;
+              })()}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               Phòng ban lớn nhất
             </p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
-              {departments.length > 0
-                ? departments.reduce(
-                    (max, dept) =>
-                      (dept.employees?.length || 0) > (max.employees?.length || 0) ? dept : max,
-                    departments[0]
-                  )?.name
-                : "N/A"}
+            <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+              {(() => {
+                const activeDepts = (departments || []).filter(d => !d.isDeleted);
+                if (activeDepts.length === 0) return "N/A";
+                const largest = activeDepts.reduce(
+                  (max, dept) =>
+                    (dept.employeeCount || dept.employees?.length || 0) > (max.employeeCount || max.employees?.length || 0) ? dept : max,
+                  activeDepts[0]
+                );
+                return largest?.name || "N/A";
+              })()}
             </p>
           </div>
         </div>
 
         <ComponentCard title="Danh sách phòng ban">
           {/* Filter Tabs */}
-          <div className="mb-4 flex gap-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="mb-4 flex gap-2 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
             <button
               onClick={() => setFilterStatus('active')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 filterStatus === 'active'
                   ? 'border-b-2 border-blue-600 text-blue-600'
                   : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
             >
-              Đang hoạt động ({departments.filter(d => !d.isDeleted).length})
+              Đang hoạt động ({(departments || []).filter(d => !d.isDeleted).length})
             </button>
             <button
               onClick={() => setFilterStatus('deleted')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 filterStatus === 'deleted'
                   ? 'border-b-2 border-blue-600 text-blue-600'
                   : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
             >
-              Đã xóa ({departments.filter(d => d.isDeleted).length})
+              Đã xóa ({(departments || []).filter(d => d.isDeleted).length})
             </button>
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 filterStatus === 'all'
                   ? 'border-b-2 border-blue-600 text-blue-600'
                   : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
             >
-              Tất cả ({departments.length})
+              Tất cả ({(departments || []).length})
             </button>
           </div>
 
           {/* Actions */}
-          <div className="mb-4 flex justify-between">
+          <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:justify-between">
             <input
               type="text"
               placeholder="Tìm kiếm phòng ban..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full sm:w-64 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
             <button
               onClick={() => setShowModal(true)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 whitespace-nowrap"
             >
               + Thêm phòng ban
             </button>
           </div>
 
           {/* Table */}
+          {filteredDepartments.length === 0 ? (
+            <EmptyState
+              title={searchTerm ? "Không tìm thấy phòng ban" : "Chưa có phòng ban nào"}
+              description={
+                searchTerm 
+                  ? `Không tìm thấy phòng ban nào khớp với "${searchTerm}". Hãy thử tìm kiếm với từ khóa khác.`
+                  : "Bắt đầu bằng cách thêm phòng ban đầu tiên vào hệ thống quản lý nhân sự của bạn."
+              }
+              icon={
+                <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              }
+              actionLabel={!searchTerm ? "+ Thêm phòng ban" : undefined}
+              onAction={!searchTerm ? () => setShowModal(true) : undefined}
+            />
+          ) : (
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
             <div className="max-w-full overflow-x-auto">
-              <Table>
+              <Table className="min-w-[800px]">
                 <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                   <TableRow>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap"
                     >
                       Tên phòng ban
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap"
                     >
                       Trưởng phòng
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap"
                     >
                       Số nhân viên
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap"
                     >
                       Mô tả
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap"
                     >
                       Trạng thái
                     </TableCell>
                     <TableCell
                       isHeader
-                      className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400"
+                      className="px-5 py-3 font-medium text-gray-500 text-center text-theme-xs dark:text-gray-400 whitespace-nowrap"
                     >
                       Thao tác
                     </TableCell>
@@ -295,31 +319,33 @@ export default function DepartmentList() {
                       key={dept._id}
                       className="border-b border-gray-100 last:border-0 dark:border-white/[0.05]"
                     >
-                      <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      <TableCell className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
                         {dept.name}
                       </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                         {typeof dept.managerId === 'string' ? dept.managerId : dept.managerId?.fullName || 'Chưa có'}
                       </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                         <button
                           onClick={() => handleEmployeeCountClick(dept)}
                           className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60"
                         >
-                          {dept.employeeCount || 0} người
+                          {dept.employeeCount ?? dept.employees?.length ?? 0} người
                         </button>
                       </TableCell>
                       <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {dept.description || 'N/A'}
+                        <div className="max-w-xs truncate" title={dept.description || 'N/A'}>
+                          {dept.description || 'N/A'}
+                        </div>
                       </TableCell>
-                      <TableCell className="px-5 py-4">
+                      <TableCell className="px-5 py-4 whitespace-nowrap">
                         {dept.isDeleted ? (
                           <Badge color="error">Đã xóa</Badge>
                         ) : (
                           <Badge color="success">Hoạt động</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="px-5 py-4">
+                      <TableCell className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-2">
                           {dept.isDeleted ? (
                             <button
@@ -346,6 +372,7 @@ export default function DepartmentList() {
               </Table>
             </div>
           </div>
+          )}
         </ComponentCard>
       </div>
 
@@ -390,7 +417,7 @@ export default function DepartmentList() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                  className=" rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
                 >
                   Hủy
                 </button>

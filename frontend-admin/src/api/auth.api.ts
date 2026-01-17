@@ -24,16 +24,16 @@ export interface AuthResponse {
 export const authAPI = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await axios.post('/auth/login', data);
-    return response.data;
+    return response as any;
   },
 
   getCurrentUser: async () => {
     const response = await axios.get('/auth/me');
-    return response.data;
+    return response as any;
   },
 
   logout: async () => {
     const response = await axios.post('/auth/logout');
-    return response.data;
+    return response as any;
   },
 };

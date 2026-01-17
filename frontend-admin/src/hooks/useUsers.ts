@@ -12,8 +12,8 @@ export const useUsers = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await userService.getAllUsers();
-      setUsers(data);
+      const response: any = await userService.getAllUsers();
+      setUsers(response.data || response);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -29,7 +29,8 @@ export const useUsers = () => {
     try {
       setLoading(true);
       setError(null);
-      const newUser = await userService.createUser(data);
+      const response: any = await userService.createUser(data);
+      const newUser = response.data || response;
       setUsers(prev => [...prev, newUser]);
       return { success: true, data: newUser };
     } catch (err) {
@@ -45,7 +46,8 @@ export const useUsers = () => {
     try {
       setLoading(true);
       setError(null);
-      const updatedUser = await userService.updateUser(id, data);
+      const response: any = await userService.updateUser(id, data);
+      const updatedUser = response.data || response;
       setUsers(prev => prev.map(u => u._id === id ? updatedUser : u));
       return { success: true, data: updatedUser };
     } catch (err) {

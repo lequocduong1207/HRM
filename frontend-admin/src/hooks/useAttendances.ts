@@ -12,8 +12,8 @@ export const useAttendances = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await attendanceService.getAllAttendances(params);
-      setAttendances(data);
+      const response: any = await attendanceService.getAllAttendances(params);
+      setAttendances(response.data || response);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -25,7 +25,8 @@ export const useAttendances = () => {
     try {
       setLoading(true);
       setError(null);
-      const newAttendance = await attendanceService.checkIn(data);
+      const response: any = await attendanceService.checkIn(data);
+      const newAttendance = response.data || response;
       setAttendances(prev => [...prev, newAttendance]);
       return { success: true, data: newAttendance };
     } catch (err) {
@@ -41,7 +42,8 @@ export const useAttendances = () => {
     try {
       setLoading(true);
       setError(null);
-      const updatedAttendance = await attendanceService.checkOut(data);
+      const response: any = await attendanceService.checkOut(data);
+      const updatedAttendance = response.data || response;
       setAttendances(prev => prev.map(a => 
         a._id === updatedAttendance._id ? updatedAttendance : a
       ));

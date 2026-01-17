@@ -3,8 +3,8 @@ import { authAPI, LoginRequest } from '../api/auth.api';
 
 interface User {
   userId: number;
-  email: string;
   username: string;
+  email: string;
   fullName: string;
   role: 'admin' | 'hr_manager' | 'manager' | 'employee';
 }
@@ -44,19 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const loginData: LoginRequest = { email, password };
 
-      const response = await authAPI.login(loginData);
+      const response = await authAPI.login(loginData) as any;
       
+      // Response structure: { success, data: { user, token, refreshToken }, message }
+      const loginData2 = response.data || response;
+
       // Kiểm tra role - CHỈ ADMIN MỚI ĐƯỢC VÀO
-      if (response.data.user.role !== 'admin') {
+      if (loginData2.user.role !== 'admin') { 
         throw new Error('Access denied. Admin only!');
       }
 
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('token', loginData2.token);
+      localStorage.setItem('user', JSON.stringify(loginData2.user));
       
-      setUser(response.data.user);
+      setUser(loginData2.user);
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     }
   };
@@ -65,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authAPI.logout();
     } catch (error) {
-      console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

@@ -131,7 +131,7 @@ export default function UserManagement() {
         // Tạm thời giữ nguyên vì chưa có trong hook
         const { userService } = await import('../../api/users.api');
         const response = await userService.changePassword(selectedUser._id, formData.password);
-        if (response.success) {
+        if (response.success || response) {
           alert("Mật khẩu đã được đổi thành công");
           setShowModal(false);
         }

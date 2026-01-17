@@ -19,7 +19,6 @@ const AttendanceList = lazy(() => import('../pages/Attendance/AttendanceList'));
 const AttendanceHistory = lazy(() => import('../pages/Attendance/AttendanceHistory'));
 
 // Leave Management (future)
-const LeaveRequest = lazy(() => import('../pages/Leave/LeaveRequest'));
 const LeaveApproval = lazy(() => import('../pages/Leave/LeaveApproval'));
 
 // Settings
@@ -83,12 +82,6 @@ export const routes: RouteObject[] = [
             {
                 path: '/attendance/history',
                 element: withSuspense(AttendanceHistory),
-            },
-            
-            // Leave Management (future)
-            {
-                path: '/leave',
-                element: withSuspense(LeaveRequest),
             },
             {
                 path: '/leave/approval',

@@ -17,7 +17,7 @@ export const useEmployeeListLogic = () => {
   // Helper function to get department name
   const getDepartmentName = (departmentId: string | IDepartment) => {
     const deptId = typeof departmentId === 'string' ? departmentId : departmentId?._id;
-    const dept = departments.find(d => d._id === deptId);
+    const dept = (departments || []).find(d => d._id === deptId);
     return dept?.name || 'N/A';
   };
 
@@ -27,7 +27,7 @@ export const useEmployeeListLogic = () => {
     [
       'fullName',
       'email',
-      'phoneNumber',
+      'phone',
       'position',
       (employee: IEmployee) => getDepartmentName(employee.departmentId),
     ]

@@ -68,9 +68,11 @@ export interface IEmployee {
     _id: string;
     fullName: string;
     email: string;
-    phoneNumber: string;
-    dateOfBirth: string;
+    phone: string;
+    dob: Date;
+    gender?: string;
     address: string;
+    nationalId: string;
     position: string;
     departmentId: IDepartment | string;
     salary: number;
@@ -83,9 +85,11 @@ export interface IEmployee {
 export interface CreateEmployeeRequest {
     fullName: string;
     email: string;
-    phoneNumber: string;
-    dateOfBirth: string;
+    phone: string;
+    dob: string;
+    gender?: string;
     address: string;
+    nationalId: string;
     position: string;
     departmentId: string;
     salary: number;
@@ -125,46 +129,44 @@ export interface UpdateDepartmentRequest extends Partial<CreateDepartmentRequest
  * Attendance Types
  */
 
-export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half-day';
-
 export interface IAttendance {
     _id: string;
+    attendanceId?: number;
     employeeId: IEmployee | string;
     date: string;
-    checkInTime?: string;
-    checkOutTime?: string;
-    status: AttendanceStatus;
+    checkIn?: string;
+    checkOut?: string;
+    isLate?: boolean;
+    isEarlyLeave?: boolean;
     notes?: string;
     createdAt: string;
-    updatedAt: string;
 }
 
 export interface CheckInRequest {
-    employeeId: string;
-    checkInTime?: string;
+    location?: string;
+    notes?: string;
 }
 
 export interface CheckOutRequest {
-    attendanceId: string;
-    checkOutTime?: string;
+    location?: string;
+    notes?: string;
 }
 
 export interface AttendanceFilterParams {
-    employeeId?: string;
+    employeeId?: string | number;
     date?: string;
     startDate?: string;
     endDate?: string;
-    status?: AttendanceStatus;
     page?: number;
     limit?: number;
 }
 
 /**
- * Leave Request Types (for future implementation)
+ * Leave Request Types
  */
 
-export type LeaveType = 'sick' | 'vacation' | 'personal' | 'other';
-export type LeaveStatus = 'pending' | 'approved' | 'rejected';
+export type LeaveType = 'Annual' | 'Sick' | 'Unpaid' | 'Maternity' | 'Paternity' | 'Other' | 'annual' | 'sick' | 'unpaid' | 'maternity' | 'paternity' | 'other';
+export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 export interface ILeaveRequest {
     _id: string;
@@ -172,9 +174,11 @@ export interface ILeaveRequest {
     leaveType: LeaveType;
     startDate: string;
     endDate: string;
-    reason: string;
+    reason?: string;
     status: LeaveStatus;
     approvedBy?: IUser | string;
+    approvedAt?: string;
+    rejectionReason?: string;
     createdAt: string;
     updatedAt: string;
 }

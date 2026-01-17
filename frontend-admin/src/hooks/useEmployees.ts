@@ -12,8 +12,8 @@ export const useEmployees = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await employeeService.getAllEmployees();
-      setEmployees(data);
+      const response: any = await employeeService.getAllEmployees();
+      setEmployees(response.data || response);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -29,7 +29,8 @@ export const useEmployees = () => {
     try {
       setLoading(true);
       setError(null);
-      const newEmployee = await employeeService.createEmployee(data);
+      const response: any = await employeeService.createEmployee(data);
+      const newEmployee = response.data || response;
       setEmployees(prev => [...prev, newEmployee]);
       return { success: true, data: newEmployee };
     } catch (err) {
@@ -45,7 +46,8 @@ export const useEmployees = () => {
     try {
       setLoading(true);
       setError(null);
-      const updatedEmployee = await employeeService.updateEmployee(id, data);
+      const response: any = await employeeService.updateEmployee(id, data);
+      const updatedEmployee = response.data || response;
       setEmployees(prev => prev.map(e => e._id === id ? updatedEmployee : e));
       return { success: true, data: updatedEmployee };
     } catch (err) {

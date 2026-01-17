@@ -8,12 +8,12 @@ export const useDepartments = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDepartments = useCallback(async () => {
+  const fetchDepartments = useCallback(async (includeDeleted: boolean = true) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await departmentService.getAllDepartments();
-      setDepartments(data);
+      const response: any = await departmentService.getAllDepartments(includeDeleted);
+      setDepartments(response.data || response);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -29,7 +29,8 @@ export const useDepartments = () => {
     try {
       setLoading(true);
       setError(null);
-      const newDepartment = await departmentService.createDepartment(data);
+      const response: any = await departmentService.createDepartment(data);
+      const newDepartment = response.data || response;
       setDepartments(prev => [...prev, newDepartment]);
       return { success: true, data: newDepartment };
     } catch (err) {
@@ -45,7 +46,8 @@ export const useDepartments = () => {
     try {
       setLoading(true);
       setError(null);
-      const updatedDepartment = await departmentService.updateDepartment(id, data);
+      const response: any = await departmentService.updateDepartment(id, data);
+      const updatedDepartment = response.data || response;
       setDepartments(prev => prev.map(d => d._id === id ? updatedDepartment : d));
       return { success: true, data: updatedDepartment };
     } catch (err) {
@@ -80,7 +82,8 @@ export const useDepartments = () => {
     try {
       setLoading(true);
       setError(null);
-      const restoredDepartment = await departmentService.restoreDepartment(id);
+      const response: any = await departmentService.restoreDepartment(id);
+      const restoredDepartment = response.data || response;
       setDepartments(prev => prev.map(d => d._id === id ? restoredDepartment : d));
       return { success: true, data: restoredDepartment };
     } catch (err) {

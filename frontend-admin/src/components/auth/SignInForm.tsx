@@ -30,6 +30,7 @@ export default function SignInForm() {
       if (err.message === 'Access denied. Admin only!') {
         setError("Access denied. This panel is for administrators only.");
       } else {
+        console.error("Login error:", err);
         setError("Invalid email or password");
       }
     } finally {
