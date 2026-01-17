@@ -8,7 +8,7 @@ import swaggerDocument from './swagger-output.json';
 import { errorHandler } from './middlewares/index.js';
 import { notFoundHandler } from './middlewares/index.js';
 import { mongoSanitizeMiddleware, sanitizeStrings } from './middlewares/security/sanitize.middleware.js';
-import { apiLimiter } from './middlewares/security/rate-limit.middleware.js';
+import { apiLimiter, readOperationsLimiter } from './middlewares/security/rate-limit.middleware.js';
 import { productionHelmetConfig, developmentHelmetConfig } from './middlewares/security/helmet.middleware.js';
 import { validateRequest } from './middlewares/security/request-validation.middleware.js';
 import { ipBlacklist, logIpAccess } from './middlewares/security/ip-filter.middleware.js';
@@ -21,7 +21,20 @@ const app: Application = express();
 
 // Trust proxy - Important when behind nginx/CloudFlare
 // This allows us to get real client IP from X-Forwarded-For header
-app.set('trust proxy', true);
+// Options:
+// - false: Don't trust any proxy (default)
+// - true: Trust all proxies (NOT RECOMMENDED - security risk)
+// - number: Trust the nth hop from the front-facing proxy
+// - string: Trust specific IP/CIDR ranges
+// - function: Custom trust logic
+if (process.env.NODE_ENV === 'production') {
+    // Production: Only trust specific proxy IPs (e.g., nginx, CloudFlare)
+    // Update these IPs to match your infrastructure
+    app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+} else {
+    // Development: No proxy trust needed
+    app.set('trust proxy', false);
+}
 
 // ============================================
 // 🔒 SECURITY MIDDLEWARES (Order matters!)
@@ -52,7 +65,9 @@ app.use(cors({
 }));
 
 // 5. Rate Limiting - Prevent brute force & DDoS
-// Apply to all routes
+// Apply read limiter first (more permissive for GET)
+app.use('/api', readOperationsLimiter);
+// Then apply general limiter for all methods
 app.use('/api', apiLimiter);
 
 // 6. Body Parser - Parse JSON and URL-encoded data

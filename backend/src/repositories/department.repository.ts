@@ -5,6 +5,7 @@ interface PaginationOptions {
     page?: number;
     limit?: number;
     searchTerm?: string;
+    includeDeleted?: boolean;
 }
 
 export class DepartmentRepository {
@@ -60,7 +61,7 @@ export class DepartmentRepository {
 
     async findAll(options?: PaginationOptions) {
         if (!options) {
-            // Simple mode - no pagination
+            // Simple mode - no pagination, only active departments for filters
             return await DepartmentModel.find({ isDeleted: false })
                 .populate('managerId')
                 .sort({ name: 1 });
@@ -70,7 +71,12 @@ export class DepartmentRepository {
         const limit = options.limit || 10;
         const skip = (page - 1) * limit;
         
-        const query: any = { isDeleted: false };
+        const query: any = {};
+        // When using pagination, allow includeDeleted option for admin management
+        if (!options.includeDeleted) {
+            query.isDeleted = false;
+        }
+        
         if (options.searchTerm) {
             const regex = new RegExp(options.searchTerm, 'i');
             query.$or = [

@@ -29,7 +29,7 @@ export class DepartmentService {
         return department;
     }
 
-    async getAllDepartments(options?: { searchTerm?: string; page?: number; limit?: number }) {
+    async getAllDepartments(options?: { searchTerm?: string; page?: number; limit?: number; includeDeleted?: boolean }) {
         const result = await this.departmentRepository.findAll(options);
         return result;
     }

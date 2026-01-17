@@ -9,6 +9,7 @@ export interface EmployeeDocument extends Document {
   address?: string;
   nationalId?: string;
   departmentId: Schema.Types.ObjectId;
+  salary?: number;
   position?: string;
   hireDate?: Date;
   employmentStatus?: string;
@@ -50,6 +51,10 @@ const EmployeeSchema = new Schema<EmployeeDocument>(
       maxlength: 20,
       unique: true,
       sparse: true,
+    },
+    salary: {
+      type: Number,
+      min: 0,
     },
     departmentId: {
       type: Schema.Types.ObjectId,

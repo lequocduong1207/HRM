@@ -6,6 +6,8 @@ import { employeeSwaggerDocs } from '../docs/employee.docs.js';
 import { userSwaggerDocs } from '../docs/user.docs.js';
 import { attendanceSwaggerDocs } from '../docs/attendance.docs.js';
 import { departmentSwaggerDocs } from '../docs/department.docs.js';
+import { leaveSwaggerDocs } from '../docs/leave.docs.js';
+import { auditSwaggerDocs, auditSchemas } from '../docs/audit.docs.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +28,9 @@ const doc = {
         { name: 'Users', description: 'User management endpoints (Admin only)' },
         { name: 'Employees', description: 'Employee management endpoints' },
         { name: 'Attendances', description: 'Attendance management endpoints' },
-        { name: 'Departments', description: 'Department management endpoints' }
+        { name: 'Departments', description: 'Department management endpoints' },
+        { name: 'Audit Logs', description: 'Audit log endpoints' },
+        { name: 'Leaves', description: 'Leave management endpoints' }
     ],
     securityDefinitions: {
         bearerAuth: {
@@ -138,6 +142,32 @@ const doc = {
             },
             
             // ========================================
+            // LEAVE SCHEMAS
+            // ========================================
+            LeaveCreateRequest: leaveSwaggerDocs.createLeave.requestBody.content['application/json'].schema,
+            Leave: {
+                type: 'object',
+                properties: {
+                    _id: { type: 'string' },
+                    employeeId: { type: 'string' },
+                    leaveType: { type: 'string', enum: ['Annual', 'Sick', 'Unpaid', 'Maternity', 'Paternity', 'Other'] },
+                    startDate: { type: 'string', format: 'date' },
+                    endDate: { type: 'string', format: 'date' },
+                    reason: { type: 'string' },
+                    status: { type: 'string', enum: ['Pending', 'Approved', 'Rejected', 'Cancelled'] },
+                    approvedBy: { type: 'string' },
+                    rejectionReason: { type: 'string' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' }
+                }
+            },
+            
+            // ========================================
+            // AUDIT LOG SCHEMAS
+            // ========================================
+            AuditLog: auditSchemas.AuditLog,
+            
+            // ========================================
             // ERROR SCHEMA
             // ========================================
             Error: {
@@ -214,7 +244,29 @@ const doc = {
             GetDepartmentById: departmentSwaggerDocs.getDepartmentById,
             CreateDepartment: departmentSwaggerDocs.createDepartment,
             UpdateDepartment: departmentSwaggerDocs.updateDepartment,
-            DeleteDepartment: departmentSwaggerDocs.deleteDepartment
+            DeleteDepartment: departmentSwaggerDocs.deleteDepartment,
+            
+            // ========================================
+            // LEAVE DEFINITIONS
+            // ========================================
+            CreateLeave: leaveSwaggerDocs.createLeave,
+            GetMyLeaves: leaveSwaggerDocs.getMyLeaves,
+            GetLeaveById: leaveSwaggerDocs.getLeaveById,
+            UpdateLeave: leaveSwaggerDocs.updateLeave,
+            CancelLeave: leaveSwaggerDocs.cancelLeave,
+            GetUsedLeaveDays: leaveSwaggerDocs.getUsedLeaveDays,
+            GetAllLeaves: leaveSwaggerDocs.getAllLeaves,
+            ApproveOrRejectLeave: leaveSwaggerDocs.approveOrRejectLeave,
+            DeleteLeave: leaveSwaggerDocs.deleteLeave,
+            GetLeaveStatistics: leaveSwaggerDocs.getLeaveStatistics,
+            
+            // ========================================
+            // AUDIT LOG DEFINITIONS
+            // ========================================
+            GetAuditLogs: auditSwaggerDocs.getAuditLogs,
+            GetAuditStatistics: auditSwaggerDocs.getAuditStatistics,
+            GetSuspiciousActivities: auditSwaggerDocs.getSuspiciousActivities,
+            GetUserAuditLogs: auditSwaggerDocs.getUserAuditLogs
         }
     }
 };
@@ -227,6 +279,8 @@ const routes = [
     path.join(__dirname, '../routes/v1/employee.routes.ts'),
     path.join(__dirname, '../routes/v1/attendance.routes.ts'),
     path.join(__dirname, '../routes/v1/department.routes.ts'),
+    path.join(__dirname, '../routes/v1/leave.routes.ts'),
+    path.join(__dirname, '../routes/v1/audit.routes.ts')
 ];
 
 swaggerAutogen({ openapi: '3.0.0' })(outputFile, routes, doc);

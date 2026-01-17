@@ -7,8 +7,8 @@ export * from './employee.validator.js';
 // Attendance validators
 export * from './attendance.validator.js';
 
-// Leave validators (future)
-// export * from './leave.validator.js';
+// Leave validators
+export * from './leave.validator.js';
 
 // Department validators (future)
 // export * from './department.validator.js';

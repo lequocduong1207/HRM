@@ -23,13 +23,15 @@ export class DepartmentController {
         const {
             searchTerm,
             page = 1,
-            limit = 10
+            limit = 10,
+            includeDeleted
         } = req.query;
 
         const result = await this.departmentService.getAllDepartments({
             searchTerm: searchTerm as string,
             page: Number(page),
-            limit: Number(limit)
+            limit: Number(limit),
+            includeDeleted: includeDeleted === 'true'
         }) as { data: any[], pagination: any };
 
         res.status(200).json({
