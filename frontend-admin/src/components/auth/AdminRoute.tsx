@@ -1,12 +1,14 @@
 import { Navigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
+import { usePermission } from '../../hooks/usePermission';
 
 interface AdminRouteProps {
   children: React.ReactNode;
 }
 
 export default function AdminRoute({ children }: AdminRouteProps) {
-  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const { isHRManager } = usePermission();
 
   // Loading state
   if (isLoading) {
@@ -25,8 +27,8 @@ export default function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/signin" replace />;
   }
 
-  // Đã đăng nhập nhưng KHÔNG PHẢI ADMIN -> Hiển thị trang Access Denied
-  if (!isAdmin) {
+  // Đã đăng nhập nhưng KHÔNG PHẢI HR Manager trở lên -> Hiển thị trang Access Denied
+  if (!isHRManager()) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
         <div className="max-w-md p-8 text-center">

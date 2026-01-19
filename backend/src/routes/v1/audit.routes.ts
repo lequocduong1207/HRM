@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import * as auditController from '../../controllers/audit.controller.js';
-import { protect, admin } from '../../middlewares/auth/protect.middleware.js';
+import { protect } from '../../middlewares/auth/protect.middleware.js';
+import { checkPermission, checkHierarchy } from '../../middlewares/auth/rbac.middleware.js';
+import { PERMISSIONS } from '../../config/permissions.js';
 import { auditSwaggerDocs } from '../../docs/audit.docs.js';
 
 const router = Router();
@@ -21,7 +23,8 @@ router.use(protect);
  */
 router.get(
     '/',
-    admin,
+    checkPermission(PERMISSIONS.AUDIT.READ),
+    checkHierarchy(2), // HR Manager trở lên
     auditController.getAuditLogs
 );
 
@@ -36,7 +39,8 @@ router.get(
  */
 router.get(
     '/statistics',
-    admin,
+    checkPermission(PERMISSIONS.AUDIT.READ_ALL),
+    checkHierarchy(1), // Chỉ Admin
     auditController.getAuditStatistics
 );
 
@@ -51,7 +55,8 @@ router.get(
  */
 router.get(
     '/suspicious',
-    admin,
+    checkPermission(PERMISSIONS.AUDIT.READ_ALL),
+    checkHierarchy(1), // Chỉ Admin
     auditController.getSuspiciousActivities
 );
 

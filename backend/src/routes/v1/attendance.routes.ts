@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { AttendanceController } from '../../controllers/attendance.controller.js';
-import { protect, admin } from '../../middlewares/auth/protect.middleware.js';
+import { protect } from '../../middlewares/auth/protect.middleware.js';
+import { checkPermission, checkHierarchy, checkDepartmentAccess } from '../../middlewares/auth/rbac.middleware.js';
+import { PERMISSIONS } from '../../config/permissions.js';
 
 const router = Router();
 const attendanceController = new AttendanceController();
@@ -15,7 +17,7 @@ router.use(protect);
 /**
  * @route   POST /api/v1/attendances/check-in
  * @desc    Check in (chấm công vào)
- * @access  Private
+ * @access  Private/Employee
  */
 router.post('/check-in',
     /* 
@@ -327,7 +329,7 @@ router.get('/',
             description: "Forbidden - Admin access required"
         }
     */
-    admin,
+    checkPermission(PERMISSIONS.ATTENDANCE.READ_ALL),
     attendanceController.getAllAttendances
 );
 
@@ -371,7 +373,7 @@ router.get('/report/summary',
             description: "Forbidden - Admin access required"
         }
     */
-    admin,
+    checkPermission(PERMISSIONS.ATTENDANCE.READ_ALL),
     attendanceController.getAttendanceSummary
 );
 
@@ -463,7 +465,8 @@ router.put('/:id',
             description: "Forbidden - Admin access required"
         }
     */
-    admin,
+    checkPermission(PERMISSIONS.ATTENDANCE.UPDATE),
+    checkHierarchy(2), // HR Manager trở lên
     attendanceController.updateAttendance
 );
 
@@ -498,7 +501,8 @@ router.delete('/:id',
             description: "Forbidden - Admin access required"
         }
     */
-    admin,
+    checkPermission(PERMISSIONS.ATTENDANCE.DELETE),
+    checkHierarchy(1), // Chỉ Admin
     attendanceController.deleteAttendance
 );
 

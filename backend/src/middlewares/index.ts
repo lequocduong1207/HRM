@@ -1,5 +1,7 @@
 // Auth middlewares
 export * from './auth/protect.middleware.js';
+export * from './auth/authorize.middleware.js';
+export * from './auth/rbac.middleware.js';
 
 // Validation
 export * from './validation/validate.middleware.js';

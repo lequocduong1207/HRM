@@ -14,12 +14,15 @@ import {
   DocsIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import { usePermission } from "../hooks/usePermission";
+import { PERMISSIONS } from "../types/rbac.types";
 
 type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  permission?: string | string[]; // Single permission or array (OR logic)
+  subItems?: { name: string; path: string; pro?: boolean; new?: boolean; permission?: string | string[] }[];
 };
 
 const navItems: NavItem[] = [
@@ -27,49 +30,55 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/",
+    permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT, PERMISSIONS.ATTENDANCE.READ_ALL, PERMISSIONS.ATTENDANCE.READ_DEPT, PERMISSIONS.LEAVE.READ_ALL, PERMISSIONS.LEAVE.READ_DEPT],
   },
   {
     icon: <UserCircleIcon />,
     name: "Quản lý nhân viên",
+    permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT, PERMISSIONS.EMPLOYEE.CREATE, PERMISSIONS.DEPARTMENT.READ],
     subItems: [
-      { name: "Danh sách nhân viên", path: "/employees", pro: false },
-      { name: "Thêm nhân viên", path: "/employees/add", pro: false },
-      { name: "Phòng ban", path: "/departments", pro: false },
+      { name: "Danh sách nhân viên", path: "/employees", pro: false, permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT] },
+      { name: "Thêm nhân viên", path: "/employees/add", pro: false, permission: PERMISSIONS.EMPLOYEE.CREATE },
+      { name: "Phòng ban", path: "/departments", pro: false, permission: PERMISSIONS.DEPARTMENT.READ },
     ],
   },
   {
     icon: <CalenderIcon />,
     name: "Chấm công",
+    permission: [PERMISSIONS.ATTENDANCE.READ_ALL, PERMISSIONS.ATTENDANCE.READ_DEPT, PERMISSIONS.ATTENDANCE.CREATE],
     subItems: [
-      { name: "Bảng chấm công", path: "/attendance", pro: false },
-      { name: "Lịch sử chấm công", path: "/attendance/history", pro: false },
+      { name: "Bảng chấm công", path: "/attendance", pro: false, permission: [PERMISSIONS.ATTENDANCE.READ_ALL, PERMISSIONS.ATTENDANCE.READ_DEPT] },
+      { name: "Lịch sử chấm công", path: "/attendance/history", pro: false, permission: [PERMISSIONS.ATTENDANCE.READ_ALL, PERMISSIONS.ATTENDANCE.READ_DEPT] },
     ],
   },
   {
     icon: <TaskIcon />,
     name: "Nghỉ phép",
+    permission: [PERMISSIONS.LEAVE.READ_ALL, PERMISSIONS.LEAVE.READ_DEPT, PERMISSIONS.LEAVE.APPROVE],
     subItems: [
-      { name: "Duyệt đơn", path: "/leave/approval", pro: false },
-      { name: "Lịch sử nghỉ phép", path: "/leave/history", pro: false },
+      { name: "Duyệt đơn", path: "/leave/approval", pro: false, permission: PERMISSIONS.LEAVE.APPROVE },
+      { name: "Lịch sử nghỉ phép", path: "/leave/history", pro: false, permission: [PERMISSIONS.LEAVE.READ_ALL, PERMISSIONS.LEAVE.READ_DEPT] },
     ],
   },
   {
     icon: <UserCircleIcon />,
     name: "Tuyển dụng",
+    permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT, PERMISSIONS.EMPLOYEE.CREATE],
     subItems: [
-      { name: "Vị trí tuyển dụng", path: "/recruitment/jobs", pro: false },
-      { name: "Danh sách ứng viên", path: "/recruitment/candidates", pro: false },
-      { name: "Lịch phỏng vấn", path: "/recruitment/interviews", pro: false },
-      { name: "Báo cáo tuyển dụng", path: "/recruitment/reports", pro: false },
+      { name: "Vị trí tuyển dụng", path: "/recruitment/jobs", pro: false, permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT] },
+      { name: "Danh sách ứng viên", path: "/recruitment/candidates", pro: false, permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT] },
+      { name: "Lịch phỏng vấn", path: "/recruitment/interviews", pro: false, permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT] },
+      { name: "Báo cáo tuyển dụng", path: "/recruitment/reports", pro: false, permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT] },
     ],
   },
   {
     icon: <PieChartIcon />,
     name: "Báo cáo",
+    permission: [PERMISSIONS.REPORT.ATTENDANCE, PERMISSIONS.REPORT.EMPLOYEE, PERMISSIONS.ATTENDANCE.READ_ALL, PERMISSIONS.ATTENDANCE.READ_DEPT, PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT],
     subItems: [
-      { name: "Báo cáo chấm công", path: "/reports/attendance", pro: false },
-      { name: "Báo cáo nhân sự", path: "/reports/employee", pro: false },
-      { name: "Thống kê tổng quan", path: "/reports/overview", pro: false },
+      { name: "Báo cáo chấm công", path: "/reports/attendance", pro: false, permission: [PERMISSIONS.REPORT.ATTENDANCE, PERMISSIONS.ATTENDANCE.READ_ALL, PERMISSIONS.ATTENDANCE.READ_DEPT] },
+      { name: "Báo cáo nhân sự", path: "/reports/employee", pro: false, permission: [PERMISSIONS.REPORT.EMPLOYEE, PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT] },
+      { name: "Thống kê tổng quan", path: "/reports/overview", pro: false, permission: [PERMISSIONS.EMPLOYEE.READ_ALL, PERMISSIONS.EMPLOYEE.READ_DEPT, PERMISSIONS.ATTENDANCE.READ_ALL, PERMISSIONS.ATTENDANCE.READ_DEPT] },
     ],
   },
 ];
@@ -91,9 +100,10 @@ const othersItems: NavItem[] = [
   {
     icon: <PlugInIcon />,
     name: "Cài đặt",
+    permission: PERMISSIONS.USER.READ,
     subItems: [
-      { name: "Cài đặt hệ thống", path: "/settings", pro: false },
-      { name: "Quản lý người dùng", path: "/users", pro: false },
+      { name: "Cài đặt hệ thống", path: "/settings", pro: false, permission: PERMISSIONS.USER.READ },
+      { name: "Quản lý người dùng", path: "/users", pro: false, permission: PERMISSIONS.USER.READ },
     ],
   },
 ];
@@ -101,6 +111,7 @@ const othersItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+  const { hasPermission, hasAnyPermission } = usePermission();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -166,9 +177,17 @@ const AppSidebar: React.FC = () => {
     });
   };
 
+  const hasMenuPermission = (permission?: string | string[]) => {
+    if (!permission) return true;
+    if (Array.isArray(permission)) {
+      return hasAnyPermission(permission);
+    }
+    return hasPermission(permission);
+  };
+
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
     <ul className="flex flex-col gap-4">
-      {items.map((nav, index) => (
+      {items.filter(nav => hasMenuPermission(nav.permission)).map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
@@ -243,7 +262,7 @@ const AppSidebar: React.FC = () => {
               }}
             >
               <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.map((subItem) => (
+                {nav.subItems.filter(subItem => hasMenuPermission(subItem.permission)).map((subItem) => (
                   <li key={subItem.name}>
                     <Link
                       to={subItem.path}

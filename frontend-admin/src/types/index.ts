@@ -25,7 +25,7 @@ export interface PaginatedResponse<T = any> {
  * User Types
  */
 
-export type UserRole = 'admin' | 'employee';
+export type UserRole = 'admin' | 'hr_manager' | 'department_manager' | 'employee';
 
 export interface IUser {
     _id: string;

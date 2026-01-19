@@ -6,7 +6,9 @@ import { asyncHandler } from '../error/async-handler.middleware.js';
 interface JwtPayload {
     userId: string;  // MongoDB _id as string
     email: string;
-    role: string;
+    role?: string;   // DEPRECATED - backward compatibility
+    roleId: string;  // NEW - Role ObjectId
+    departmentId?: string; // Department ObjectId
 }
 
 declare global {
@@ -41,15 +43,17 @@ export const protect = asyncHandler(
     }
 );
 
+// DEPRECATED - Use checkHierarchy(1) instead
 export const admin = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
             throw new AppError('Not authorized, no token', 401);
         }
 
-        if (req.user.role !== 'admin') {
+        // Backward compatibility check
+        if (req.user.role && req.user.role !== 'admin') {
             throw new AppError('Not authorized, admin access required', 403);
-        } 
+        }
 
         next();
     }

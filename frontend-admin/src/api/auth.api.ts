@@ -1,4 +1,5 @@
 import axios from './axios.customize';
+import { AuthData } from '../types/rbac.types';
 
 export interface LoginRequest {
   email: string;
@@ -8,22 +9,13 @@ export interface LoginRequest {
 export interface AuthResponse {
   success: boolean;
   message: string;
-  data: {
-    user: {
-      userId: number;
-      username: string;
-      email: string;
-      fullName: string;
-      role: 'admin' | 'hr_manager' | 'manager' | 'employee';
-    };
-    token: string;
-    refreshToken: string;
-  };
+  data: AuthData;
 }
 
 export const authAPI = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await axios.post('/auth/login', data);
+    console.log('Login response:', response);
     return response as any;
   },
 

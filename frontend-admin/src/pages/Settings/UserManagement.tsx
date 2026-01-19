@@ -8,6 +8,8 @@ import { PencilIcon, TrashBinIcon, LockIcon } from "../../icons";
 import type { IUser, CreateUserRequest } from "../../types";
 import { formatDate } from "../../utils";
 import { useUsers } from "../../hooks/useUsers";
+import { PERMISSIONS } from "../../types/rbac.types";
+import { PermissionGuard } from "../../components/auth/PermissionGuard";
 
 export default function UserManagement() {
   const { users, loading, error, createUser, updateUser, deleteUser } = useUsers();
@@ -28,6 +30,10 @@ export default function UserManagement() {
     switch (role) {
       case "admin":
         return <Badge color="error">Quản trị viên</Badge>;
+      case "hr_manager":
+        return <Badge color="warning">Quản lý HR</Badge>;
+      case "department_manager":
+        return <Badge color="dark">Quản lý Phòng ban</Badge>;
       case "employee":
         return <Badge color="info">Nhân viên</Badge>;
       default:
@@ -130,11 +136,9 @@ export default function UserManagement() {
       } else if (modalType === "password" && selectedUser && formData.password) {
         // Tạm thời giữ nguyên vì chưa có trong hook
         const { userService } = await import('../../api/users.api');
-        const response = await userService.changePassword(selectedUser._id, formData.password);
-        if (response.success || response) {
-          alert("Mật khẩu đã được đổi thành công");
-          setShowModal(false);
-        }
+        await userService.changePassword(selectedUser._id, formData.password);
+        alert("Mật khẩu đã được đổi thành công");
+        setShowModal(false);
       } else if (modalType === "delete" && selectedUser) {
         const result = await deleteUser(selectedUser._id);
         if (result.success) {
@@ -176,7 +180,7 @@ export default function UserManagement() {
 
       <div className="space-y-6">
         {/* Statistics */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Tổng tài khoản
@@ -191,6 +195,14 @@ export default function UserManagement() {
             </p>
             <p className="text-3xl font-bold text-red-600">
               {users.filter((u) => u.role === "admin").length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Quản lý
+            </p>
+            <p className="text-3xl font-bold text-orange-600">
+              {users.filter((u) => u.role === "hr_manager" || u.role === "department_manager").length}
             </p>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -221,15 +233,19 @@ export default function UserManagement() {
               >
                 <option value="">Tất cả vai trò</option>
                 <option value="admin">Quản trị viên</option>
+                <option value="hr_manager">Quản lý HR</option>
+                <option value="department_manager">Quản lý Phòng ban</option>
                 <option value="employee">Nhân viên</option>
               </select>
             </div>
-            <button
-              onClick={handleCreateUser}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              + Thêm tài khoản
-            </button>
+            <PermissionGuard permission={PERMISSIONS.USER.CREATE}>
+              <button
+                onClick={handleCreateUser}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                + Thêm tài khoản
+              </button>
+            </PermissionGuard>
           </div>
 
           {/* Table */}
@@ -304,34 +320,42 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell className="px-5 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleEditUser(user)}
-                            className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/20"
-                            title="Chỉnh sửa"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleResetPassword(user)}
-                            className="rounded-lg p-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/20"
-                            title="Đặt lại mật khẩu"
-                          >
-                            <LockIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleToggleStatus(user)}
-                            className="rounded-lg p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/20"
-                            title={user.isActive ? "Khóa tài khoản" : "Kích hoạt"}
-                          >
-                            <LockIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user)}
-                            className="rounded-lg p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
-                            title="Xóa tài khoản"
-                          >
-                            <TrashBinIcon className="h-4 w-4" />
-                          </button>
+                          <PermissionGuard permission={PERMISSIONS.USER.UPDATE}>
+                            <button
+                              onClick={() => handleEditUser(user)}
+                              className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/20"
+                              title="Chỉnh sửa"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                          </PermissionGuard>
+                          <PermissionGuard permission={PERMISSIONS.USER.RESET_PASSWORD}>
+                            <button
+                              onClick={() => handleResetPassword(user)}
+                              className="rounded-lg p-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/20"
+                              title="Đặt lại mật khẩu"
+                            >
+                              <LockIcon className="h-4 w-4" />
+                            </button>
+                          </PermissionGuard>
+                          <PermissionGuard permission={PERMISSIONS.USER.UPDATE}>
+                            <button
+                              onClick={() => handleToggleStatus(user)}
+                              className="rounded-lg p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/20"
+                              title={user.isActive ? "Khóa tài khoản" : "Kích hoạt"}
+                            >
+                              <LockIcon className="h-4 w-4" />
+                            </button>
+                          </PermissionGuard>
+                          <PermissionGuard permission={PERMISSIONS.USER.DELETE}>
+                            <button
+                              onClick={() => handleDeleteUser(user)}
+                              className="rounded-lg p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+                              title="Xóa tài khoản"
+                            >
+                              <TrashBinIcon className="h-4 w-4" />
+                            </button>
+                          </PermissionGuard>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -442,10 +466,12 @@ export default function UserManagement() {
                       </label>
                       <select
                         value={formData.role || selectedUser.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "employee" })}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "hr_manager" | "department_manager" | "employee" })}
                         className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-700 dark:text-white"
                       >
                         <option value="employee">Nhân viên</option>
+                        <option value="department_manager">Quản lý Phòng ban</option>
+                        <option value="hr_manager">Quản lý HR</option>
                         <option value="admin">Quản trị viên</option>
                       </select>
                     </div>

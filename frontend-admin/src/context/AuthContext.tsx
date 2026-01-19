@@ -1,19 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI, LoginRequest } from '../api/auth.api';
-
-interface User {
-  userId: number;
-  username: string;
-  email: string;
-  fullName: string;
-  role: 'admin' | 'hr_manager' | 'manager' | 'employee';
-}
+import { User, RoleLevel } from '../types/rbac.types';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isLoading: boolean;
+  permissions: string[];
+  hasPermission: (permission: string) => boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => void;
@@ -34,8 +29,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userData = localStorage.getItem('user');
 
     if (token && userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
+      try {
+        const parsedUser = JSON.parse(userData) as User;
+        // Ensure permissions array exists
+        if (!parsedUser.permissions) {
+          parsedUser.permissions = [];
+        }
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setIsLoading(false);
   };
@@ -46,18 +51,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const response = await authAPI.login(loginData) as any;
       
-      // Response structure: { success, data: { user, token, refreshToken }, message }
-      const loginData2 = response.data || response;
+      // Response structure: { success, data: { user, token, refreshToken, role }, message }
+      const authData = response.data || response;
 
-      // Kiểm tra role - CHỈ ADMIN MỚI ĐƯỢC VÀO
-      if (loginData2.user.role !== 'admin') { 
-        throw new Error('Access denied. Admin only!');
+      // Extract user data with role info
+      const userData: User = {
+        ...authData.user,
+        roleId: authData.user.roleId || authData.role?._id,
+        roleName: authData.user.roleName || authData.role?.name,
+        roleDisplayName: authData.user.roleDisplayName || authData.role?.displayName,
+        permissions: authData.role?.permissions || authData.user.permissions || [],
+      };
+
+      // Check role hierarchy - Admin/HR Manager allowed
+      const roleHierarchy: Record<string, RoleLevel> = {
+        admin: RoleLevel.ADMIN,
+        hr_manager: RoleLevel.HR_MANAGER,
+        department_manager: RoleLevel.DEPARTMENT_MANAGER,
+        employee: RoleLevel.EMPLOYEE,
+      };
+
+      const userLevel = roleHierarchy[userData.roleName || userData.role];
+      
+      // Only allow Admin and HR Manager to access admin panel
+      if (userLevel === undefined || userLevel > RoleLevel.HR_MANAGER) { 
+        throw new Error('Access denied. Admin or HR Manager only!');
       }
 
-      localStorage.setItem('token', loginData2.token);
-      localStorage.setItem('user', JSON.stringify(loginData2.user));
+      localStorage.setItem('token', authData.token);
+      localStorage.setItem('user', JSON.stringify(userData));
       
-      setUser(loginData2.user);
+      setUser(userData);
     } catch (error) {
       throw error;
     }
@@ -67,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authAPI.logout();
     } catch (error) {
+      console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -74,12 +99,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const hasPermission = (permission: string): boolean => {
+    if (!user || !user.permissions) return false;
+    return user.permissions.includes(permission);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       isAuthenticated: !!user,
-      isAdmin: user?.role === 'admin',
+      isAdmin: (user?.roleName || user?.role) === 'admin',
       isLoading,
+      permissions: user?.permissions || [],
+      hasPermission,
       login, 
       logout,
       checkAuth 

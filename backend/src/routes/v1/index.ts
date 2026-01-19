@@ -6,11 +6,13 @@ import departmentRoutes from './department.routes.js';
 import userRoutes from './user.routes.js';
 import auditRoutes from './audit.routes.js';
 import leaveRoutes from './leave.routes.js';
+import roleRoutes from './role.routes.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/roles', roleRoutes);
 router.use('/employees', employeeRoutes);
 router.use('/attendances', attendanceRoutes);
 router.use('/departments', departmentRoutes);

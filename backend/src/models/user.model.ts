@@ -2,11 +2,13 @@ import { Schema, model, Document, Types } from "mongoose";
 import { resetPassword } from "../services";
 
 /**
- * Role của user
+ * Role của user (DEPRECATED - Use roleId instead)
+ * Giữ lại để backward compatibility
  */
 export type UserRole =
   | "admin"
   | "hr_manager"
+  | "department_manager"
   | "manager"
   | "employee";
 
@@ -18,7 +20,9 @@ export interface IUser extends Document {
   passwordHash?: string;
   fullName: string;
   phone?: string;
-  role: UserRole;
+  role?: UserRole;           // DEPRECATED - Giữ lại cho migration
+  roleId: Types.ObjectId;    // FK → roles (NEW)
+  departmentId?: Types.ObjectId; // FK → departments (cho department manager)
   employeeId?: Types.ObjectId;
   isActive: boolean;
   emailVerified: boolean;
@@ -61,10 +65,26 @@ const userSchema = new Schema<IUser>(
       trim: true
     },
 
+    // DEPRECATED - Giữ lại cho migration
     role: {
       type: String,
-      enum: ["admin", "hr_manager", "manager", "employee"],
-      default: "employee"
+      enum: ["admin", "hr_manager", "department_manager", "manager", "employee"],
+      required: false,
+    },
+
+    // NEW - Role ID reference
+    roleId: {
+      type: Schema.Types.ObjectId,
+      ref: "Role",
+      required: true,
+      index: true,
+    },
+
+    // Department ID - Quan trọng cho department manager
+    departmentId: {
+      type: Schema.Types.ObjectId,
+      ref: "Department",
+      index: true,
     },
 
     emailVerified: {

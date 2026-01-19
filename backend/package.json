@@ -6,7 +6,8 @@
     "dev": "npm run swagger && tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "swagger": "tsx src/config/swagger-autogen.ts",
-    "build": "npm run swagger && tsc"
+    "build": "npm run swagger && tsc",
+    "migrate:rbac": "tsx src/scripts/migrate-rbac.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

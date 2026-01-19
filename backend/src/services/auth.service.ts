@@ -1,6 +1,7 @@
 import { AppError } from '../middlewares/index.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
 import { AuditService } from './audit.service.js';
+import { Role } from '../models/role.model.js';
 import {
     hashPassword,
     comparePassword,
@@ -24,7 +25,11 @@ interface UserData {
     userId: string;  // MongoDB _id as string
     email: string;
     fullName: string;
-    role: string;
+    role?: string;  // DEPRECATED - backward compatibility
+    roleId: string;
+    roleName: string;
+    roleDisplayName: string;
+    departmentId?: string;
 }
 
 interface LoginResult {
@@ -47,26 +52,37 @@ export const register = async (data: RegisterData, ipAddress: string = 'unknown'
         // Hash password
         const hashedPassword = await hashPassword(data.password);
 
+        // Get default employee role
+        const employeeRole = await Role.findOne({ name: 'employee', isActive: true });
+        if (!employeeRole) {
+            throw new AppError('Default employee role not found. Please run migration.', 500);
+        }
+
         // Create user
         const user = await authRepo.createUser({
             email: data.email,
             password: hashedPassword,
             fullName: data.fullName,
-            role: 'employee'
-        });
+            role: 'employee',  // Keep for backward compatibility
+            roleId: employeeRole._id,
+        } as any);
 
         // Generate tokens
         const token = generateToken({
             userId: user._id.toString(),
             email: user.email,
-            role: user.role
-        });
+            role: 'employee',  // Backward compatibility
+            roleId: employeeRole._id.toString(),
+            departmentId: user.departmentId?.toString(),
+        } as any);
 
         const refreshToken = generateRefreshToken({
             userId: user._id.toString(),
             email: user.email,
-            role: user.role
-        });
+            role: 'employee',
+            roleId: employeeRole._id.toString(),
+            departmentId: user.departmentId?.toString(),
+        } as any);
 
         // Generate email verification token
         const verificationToken = generateEmailVerificationToken(user._id.toString());
@@ -78,7 +94,7 @@ export const register = async (data: RegisterData, ipAddress: string = 'unknown'
             action: 'USER_CREATED',
             userId: user._id.toString(),
             userEmail: user.email,
-            userRole: user.role,
+            userRole: 'employee',
             ipAddress,
             userAgent,
             description: `New user registered: ${user.email}`,
@@ -92,7 +108,11 @@ export const register = async (data: RegisterData, ipAddress: string = 'unknown'
                 userId: user._id.toString(),
                 email: user.email,
                 fullName: user.fullName,
-                role: user.role
+                role: 'employee',
+                roleId: employeeRole._id.toString(),
+                roleName: employeeRole.name,
+                roleDisplayName: employeeRole.displayName,
+                departmentId: user.departmentId?.toString(),
             },
             token,
             refreshToken
@@ -117,7 +137,7 @@ export const register = async (data: RegisterData, ipAddress: string = 'unknown'
  */
 export const login = async (email: string, password: string, ipAddress: string = 'unknown', userAgent?: string): Promise<LoginResult> => {
     try {
-        // Find user by email
+        // Find user by email và populate role
         const user = await authRepo.findByEmail(email);
         if (!user) {
             // 📝 Audit log - Login failed (user not found)
@@ -227,25 +247,37 @@ export const login = async (email: string, password: string, ipAddress: string =
         // Update last login
         await authRepo.updateLastLogin(user._id.toString());
 
+        // Populate role
+        await user.populate('roleId');
+        const role = user.roleId as any;
+        
+        if (!role) {
+            throw new AppError('User role not found. Please contact administrator.', 500);
+        }
+
         // Generate tokens
         const token = generateToken({
             userId: user._id.toString(),
             email: user.email,
-            role: user.role
-        });
+            role: role.name,  // Backward compatibility
+            roleId: role._id.toString(),
+            departmentId: user.departmentId?.toString(),
+        } as any);
 
         const refreshToken = generateRefreshToken({
             userId: user._id.toString(),
             email: user.email,
-            role: user.role
-        });
+            role: role.name,
+            roleId: role._id.toString(),
+            departmentId: user.departmentId?.toString(),
+        } as any);
 
         // 📝 Audit log - Login success
         await AuditService.log({
             action: 'LOGIN_SUCCESS',
             userId: user._id.toString(),
             userEmail: user.email,
-            userRole: user.role,
+            userRole: role.name,
             ipAddress,
             userAgent,
             description: `User logged in successfully`,
@@ -257,7 +289,11 @@ export const login = async (email: string, password: string, ipAddress: string =
                 userId: user._id.toString(),
                 email: user.email,
                 fullName: user.fullName,
-                role: user.role
+                role: role.name,
+                roleId: role._id.toString(),
+                roleName: role.name,
+                roleDisplayName: role.displayName,
+                departmentId: user.departmentId?.toString(),
             },
             token,
             refreshToken
@@ -295,25 +331,41 @@ export const loginFlexible = async (identifier: string, password: string): Promi
     // Update last login
     await authRepo.updateLastLogin(user._id.toString());
 
+    // Populate role
+    await user.populate('roleId');
+    const role = user.roleId as any;
+    
+    if (!role) {
+        throw new AppError('User role not found. Please contact administrator.', 500);
+    }
+
     // Generate tokens
     const token = generateToken({
         userId: user._id.toString(),
         email: user.email,
-        role: user.role
-    });
+        role: role.name,
+        roleId: role._id.toString(),
+        departmentId: user.departmentId?.toString(),
+    } as any);
 
     const refreshToken = generateRefreshToken({
         userId: user._id.toString(),
         email: user.email,
-        role: user.role
-    });
+        role: role.name,
+        roleId: role._id.toString(),
+        departmentId: user.departmentId?.toString(),
+    } as any);
 
     return {
         user: {
             userId: user._id.toString(),
             email: user.email,
             fullName: user.fullName,
-            role: user.role
+            role: role.name,
+            roleId: role._id.toString(),
+            roleName: role.name,
+            roleDisplayName: role.displayName,
+            departmentId: user.departmentId?.toString(),
         },
         token,
         refreshToken
@@ -330,11 +382,23 @@ export const getUserById = async (userId: string): Promise<UserData | null> => {
         return null;
     }
 
+    // Populate role
+    await user.populate('roleId');
+    const role = user.roleId as any;
+    
+    if (!role) {
+        return null;
+    }
+
     return {
         userId: user._id.toString(),
         email: user.email,
         fullName: user.fullName,
-        role: user.role
+        role: role.name,
+        roleId: role._id.toString(),
+        roleName: role.name,
+        roleDisplayName: role.displayName,
+        departmentId: user.departmentId?.toString(),
     };
 };
 
@@ -481,11 +545,23 @@ export const updateProfile = async (
         throw new AppError('Failed to update profile', 500);
     }
 
+    // Populate role
+    await updatedUser.populate('roleId');
+    const role = updatedUser.roleId as any;
+    
+    if (!role) {
+        throw new AppError('User role not found', 500);
+    }
+
     return {
         userId: updatedUser._id.toString(),
         email: updatedUser.email,
         fullName: updatedUser.fullName,
-        role: updatedUser.role
+        role: role.name,
+        roleId: role._id.toString(),
+        roleName: role.name,
+        roleDisplayName: role.displayName,
+        departmentId: updatedUser.departmentId?.toString(),
     };
 };
 

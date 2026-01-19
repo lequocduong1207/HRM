@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { DepartmentController } from '../../controllers/department.controller.js';
-import { protect, admin } from '../../middlewares/auth/protect.middleware.js';
+import { protect } from '../../middlewares/auth/protect.middleware.js';
+import { checkPermission, checkHierarchy } from '../../middlewares/auth/rbac.middleware.js';
+import { PERMISSIONS } from '../../config/permissions.js';
 import { validate } from '../../middlewares/index.js';
 import { createDepartmentSchema, updateDepartmentSchema, departmentIdSchema } from '../../validators/department.validator.js';
 
@@ -42,7 +44,7 @@ router.get('/statistics',
         #swagger.description = 'Lấy thống kê số lượng nhân viên theo phòng ban'
         #swagger.security = [{ "bearerAuth": [] }]
     */
-    admin,
+    checkPermission(PERMISSIONS.DEPARTMENT.READ),
     departmentController.getStatistics
 );
 
@@ -92,7 +94,8 @@ router.post('/',
         #swagger.description = 'Tạo một phòng ban mới'
         #swagger.security = [{ "bearerAuth": [] }]
     */
-    admin,
+    checkPermission(PERMISSIONS.DEPARTMENT.CREATE),
+    checkHierarchy(2), // HR Manager trở lên
     validate(createDepartmentSchema),
     departmentController.createDepartment
 );
@@ -110,7 +113,8 @@ router.put('/:id',
         #swagger.description = 'Cập nhật thông tin phòng ban'
         #swagger.security = [{ "bearerAuth": [] }]
     */
-    admin,
+    checkPermission(PERMISSIONS.DEPARTMENT.UPDATE),
+    checkHierarchy(2), // HR Manager trở lên
     validate({ ...departmentIdSchema, ...updateDepartmentSchema }),
     departmentController.updateDepartment
 );
@@ -128,7 +132,8 @@ router.delete('/:id',
         #swagger.description = 'Xóa một phòng ban (chỉ đánh dấu xóa)'
         #swagger.security = [{ "bearerAuth": [] }]
     */
-    admin,
+    checkPermission(PERMISSIONS.DEPARTMENT.DELETE),
+    checkHierarchy(1), // Chỉ Admin
     validate(departmentIdSchema),
     departmentController.deleteDepartment
 );
@@ -146,7 +151,8 @@ router.patch('/:id/restore',
         #swagger.description = 'Khôi phục một phòng ban đã bị xóa'
         #swagger.security = [{ "bearerAuth": [] }]
     */
-    admin,
+    checkPermission(PERMISSIONS.DEPARTMENT.UPDATE),
+    checkHierarchy(1), // Chỉ Admin
     validate(departmentIdSchema),
     departmentController.restoreDepartment
 );

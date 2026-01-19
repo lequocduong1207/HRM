@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { LeaveController } from '../../controllers/leave.controller.js';
-import { protect, admin } from '../../middlewares/auth/protect.middleware.js';
+import { protect } from '../../middlewares/auth/protect.middleware.js';
+import { checkPermission, checkHierarchy, checkOwnership } from '../../middlewares/auth/rbac.middleware.js';
+import { PERMISSIONS } from '../../config/permissions.js';
 import { validate } from '../../middlewares/validation/validate.middleware.js';
 import { leaveSwaggerDocs } from '../../docs/leave.docs.js';
 import {
@@ -35,7 +37,7 @@ router.use(protect);
  * #swagger.security = [{ "bearerAuth": [] }]
  */
 router.get('/admin/all',
-    admin,
+    checkPermission(PERMISSIONS.LEAVE.READ_ALL),
     validate(getAllLeavesSchema),
     leaveController.getAllLeaves
 );
@@ -50,7 +52,7 @@ router.get('/admin/all',
  * #swagger.security = [{ "bearerAuth": [] }]
  */
 router.get('/admin/statistics',
-    admin,
+    checkPermission(PERMISSIONS.LEAVE.READ_ALL),
     validate(getLeaveStatisticsSchema),
     leaveController.getLeaveStatistics
 );
@@ -65,7 +67,7 @@ router.get('/admin/statistics',
  * #swagger.security = [{ "bearerAuth": [] }]
  */
 router.put('/admin/:id/approve',
-    admin,
+    checkPermission(PERMISSIONS.LEAVE.APPROVE),
     validate(approveOrRejectLeaveSchema),
     leaveController.approveOrRejectLeave
 );
@@ -80,7 +82,8 @@ router.put('/admin/:id/approve',
  * #swagger.security = [{ "bearerAuth": [] }]
  */
 router.delete('/admin/:id',
-    admin,
+    checkPermission(PERMISSIONS.LEAVE.DELETE),
+    checkHierarchy(1), // Chỉ Admin
     validate(getLeaveByIdSchema),
     leaveController.deleteLeave
 );

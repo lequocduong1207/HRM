@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { UserController } from '../../controllers/user.controller.js';
-import { protect, admin } from '../../middlewares/auth/protect.middleware.js';
+import { protect } from '../../middlewares/auth/protect.middleware.js';
+import { checkPermission, checkHierarchy, checkCanManageUser } from '../../middlewares/auth/rbac.middleware.js';
+import { PERMISSIONS } from '../../config/permissions.js';
 
 const router = Router();
 const userController = new UserController();
 
-// Tất cả routes đều yêu cầu admin
-router.use(protect, admin);
+// Tất cả routes đều yêu cầu authentication
+router.use(protect);
 
 /**
  * @route   POST /api/v1/users
@@ -84,6 +86,8 @@ router.post('/',
             description: "Forbidden - Admin access required"
         }
     */
+    checkPermission(PERMISSIONS.USER.CREATE),
+    checkHierarchy(1), // Chỉ Admin
     userController.createUser
 );
 
@@ -132,6 +136,8 @@ router.get('/',
             description: "Forbidden - Admin access required"
         }
     */
+    checkPermission(PERMISSIONS.USER.READ_ALL),
+    checkHierarchy(2), // HR Manager trở lên
     userController.getAllUsers
 );
 
@@ -183,6 +189,8 @@ router.get('/:id',
         }
         #swagger.responses[403] = {
             description: "Forbidden - Admin access required"
+    checkPermission(PERMISSIONS.USER.READ),
+    checkHierarchy(2), // HR Manager trở lên
         }
     */
     userController.getUserById
@@ -268,6 +276,8 @@ router.put('/:id',
         }
         #swagger.responses[403] = {
             description: "Forbidden - Admin access required"
+    checkPermission(PERMISSIONS.USER.UPDATE),
+    checkCanManageUser(), // Kiểm tra quyền quản lý user
         }
     */
     userController.updateUser
@@ -313,6 +323,8 @@ router.delete('/:id',
         }
         #swagger.responses[403] = {
             description: "Forbidden - Admin access required"
+    checkPermission(PERMISSIONS.USER.DELETE),
+    checkHierarchy(1), // Chỉ Admin
         }
     */
     userController.deleteUser
