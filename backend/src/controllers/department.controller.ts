@@ -15,11 +15,6 @@ export class DepartmentController {
      * @access  Private
      */
     getAllDepartments = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Get all departments'
-            #swagger.description = 'Get all departments with pagination'
-        */
         const {
             searchTerm,
             page = 1,
@@ -47,11 +42,6 @@ export class DepartmentController {
      * @access  Private
      */
     getAllSimple = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Get all departments (simple)'
-            #swagger.description = 'Get all departments without pagination for dropdown'
-        */
         const departments = await this.departmentService.getAllSimple();
 
         res.status(200).json({
@@ -66,11 +56,6 @@ export class DepartmentController {
      * @access  Private/Admin
      */
     getStatistics = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Get department statistics'
-            #swagger.description = 'Get employee statistics by department'
-        */
         const statistics = await this.departmentService.getStatistics();
 
         res.status(200).json({
@@ -85,11 +70,6 @@ export class DepartmentController {
      * @access  Private
      */
     getDepartmentById = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Get department by ID'
-            #swagger.description = 'Get detailed information of a department'
-        */
         const departmentId = req.params.id;
         const department = await this.departmentService.getDepartmentById(departmentId);
 
@@ -105,11 +85,6 @@ export class DepartmentController {
      * @access  Private/Admin
      */
     createDepartment = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Create new department'
-            #swagger.description = 'Create a new department'
-        */
         const department = await this.departmentService.createDepartment(req.body);
 
         res.status(201).json({
@@ -125,11 +100,6 @@ export class DepartmentController {
      * @access  Private/Admin
      */
     updateDepartment = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Update department'
-            #swagger.description = 'Update department information'
-        */
         const departmentId = req.params.id;
         const department = await this.departmentService.updateDepartment(departmentId, req.body);
 
@@ -146,11 +116,6 @@ export class DepartmentController {
      * @access  Private/Admin
      */
     deleteDepartment = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Delete department (soft delete)'
-            #swagger.description = 'Soft delete a department (only if no employees)'
-        */
         const departmentId = req.params.id;
         await this.departmentService.deleteDepartment(departmentId);
 
@@ -166,11 +131,6 @@ export class DepartmentController {
      * @access  Private/Admin
      */
     restoreDepartment = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Departments']
-            #swagger.summary = 'Restore deleted department'
-            #swagger.description = 'Restore a soft deleted department'
-        */
         const departmentId = req.params.id;
         const department = await this.departmentService.restoreDepartment(departmentId);
 
@@ -178,6 +138,22 @@ export class DepartmentController {
             success: true,
             message: 'Department restored successfully',
             data: department
+        });
+    });
+
+    /**
+     * @route   POST /api/v1/departments/sync-employee-count
+     * @desc    Đồng bộ lại số lượng nhân viên trong phòng ban
+     * @access  Private/Admin
+     */
+    syncEmployeeCount = asyncHandler(async (req: Request, res: Response) => {
+        const { departmentId } = req.body;
+        const results = await this.departmentService.syncEmployeeCount(departmentId);
+
+        res.status(200).json({
+            success: true,
+            message: 'Employee count synchronized successfully',
+            data: results
         });
     });
 }

@@ -4,6 +4,7 @@ import { AppError } from '../middlewares/error/error-handler.middleware.js';
 import mongoose from 'mongoose';
 import { DepartmentRepository } from '../repositories/department.repository.js';
 import { DepartmentModel } from '../models/department.model.js';
+import { User } from '../models/user.model.js';
 
 export class EmployeeService {
     private EmployeeRepository: EmployeeRepository;
@@ -124,6 +125,18 @@ export class EmployeeService {
                 throw new AppError('Employee not found', 404);
             }
 
+            // Vô hiệu hóa User liên kết (nếu có)
+            if (employee.userId) {
+                await User.findByIdAndUpdate(
+                    employee.userId,
+                    { 
+                        isActive: false, 
+                        employeeId: null 
+                    },
+                    { session }
+                );
+            }
+
             // Xóa nhân viên
             const deleted = await EmployeeModel.findByIdAndDelete(employeeId, { session });
             if (!deleted) {
@@ -162,11 +175,11 @@ export class EmployeeService {
         employmentStatus?: string,
         options?: { page?: number; limit?: number }
     ) {
-        const employees = await this.EmployeeRepository.findByDepartment(
+        const result = await this.EmployeeRepository.findByDepartment(
             departmentId,
             { ...options, employmentStatus }
         );
-        return employees;
+        return result;
     }
 
     async getStatisticsByDepartment() {

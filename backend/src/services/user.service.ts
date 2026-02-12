@@ -3,6 +3,8 @@ import { Types } from 'mongoose';
 import { UserRole } from '../models/user.model.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { EmployeeRepository } from '../repositories/employee.repository.js';
+import { EmployeeModel } from '../models/employee.model.js';
+import { Role } from '../models/role.model.js';
 import { AppError } from '../middlewares/error/error-handler.middleware.js';
 
 export class UserService {
@@ -41,6 +43,12 @@ export class UserService {
             throw new AppError('Email already exists', 400);
         }
 
+        // Tìm role theo tên
+        const role = await Role.findByName(data.role);
+        if (!role) {
+            throw new AppError(`Role '${data.role}' not found`, 400);
+        }
+
         // Nếu có employeeId, kiểm tra employee có tồn tại không
         if (data.employeeId) {
             const employee = await this.employeeRepository.findById(data.employeeId);
@@ -63,9 +71,29 @@ export class UserService {
             email: data.email,
             passwordHash,
             fullName: data.fullName,
-            role: data.role as UserRole,
+            roleId: role._id,
             employeeId: data.employeeId ? new Types.ObjectId(data.employeeId) : undefined
         });
+
+        // Nếu không có employeeId, tìm employee theo email và link lại
+        let employeeToLink = data.employeeId ? await this.employeeRepository.findById(data.employeeId) : null;
+        
+        if (!employeeToLink) {
+            // Tìm employee theo email
+            const employees = await EmployeeModel.find({ email: data.email });
+            if (employees.length > 0) {
+                employeeToLink = employees[0];
+            }
+        }
+
+        // Cập nhật userId cho employee
+        if (employeeToLink) {
+            await EmployeeModel.findByIdAndUpdate(
+                employeeToLink._id,
+                { userId: user._id } as any,
+                { new: true }
+            );
+        }
 
         return user.toJSON();
     }
@@ -140,11 +168,21 @@ export class UserService {
             passwordHash = await bcrypt.hash(data.password, 10);
         }
 
+        // Tìm roleId nếu có role
+        let roleId;
+        if (data.role) {
+            const role = await Role.findByName(data.role);
+            if (!role) {
+                throw new AppError(`Role '${data.role}' not found`, 400);
+            }
+            roleId = role._id;
+        }
+
         const updateData: Partial<typeof existingUser> = {};
         if (data.email) updateData.email = data.email;
         if (passwordHash) updateData.passwordHash = passwordHash;
         if (data.fullName) updateData.fullName = data.fullName;
-        if (data.role) updateData.role = data.role as UserRole;
+        if (roleId) updateData.roleId = roleId;
         if (data.employeeId !== undefined) {
             updateData.employeeId = data.employeeId ? new Types.ObjectId(data.employeeId) : undefined;
         }

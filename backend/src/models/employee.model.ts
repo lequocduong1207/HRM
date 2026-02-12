@@ -1,6 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface EmployeeDocument extends Document {
+  userId?: Schema.Types.ObjectId;
   fullName: string;
   dob?: Date;
   gender?: string;
@@ -20,6 +21,12 @@ export interface EmployeeDocument extends Document {
 
 const EmployeeSchema = new Schema<EmployeeDocument>(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      sparse: true,
+    },
     fullName: {
       type: String,
       required: true,

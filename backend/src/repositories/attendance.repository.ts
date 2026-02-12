@@ -1,16 +1,32 @@
 import { Types } from 'mongoose';
 import { Attendance } from '../models/attendance.model.js';
+import { User } from '../models/user.model.js';
+import { EmployeeModel } from '../models/employee.model.js';
 
-/**
- * Repository xử lý mọi thao tác database cho Attendance
- */
 export class AttendanceRepository {
     async checkInTime(userId: string, data: { location?: string; notes?: string }) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
+        // Find employee by userId first
+        let employee = await EmployeeModel.findOne({ userId: new Types.ObjectId(userId) } as any);
+        
+        // If not found, try through user.employeeId
+        if (!employee) {
+            const user = await User.findById(userId);
+            if (user?.employeeId) {
+                employee = await EmployeeModel.findById(user.employeeId);
+            } else if (user?.email) {
+                employee = await EmployeeModel.findOne({ email: user.email });
+            }
+        }
+        
+        if (!employee) {
+            throw new Error('Employee record not found for this user');
+        }
+        
         const attendance = new Attendance({
-            employeeId: new Types.ObjectId(userId),
+            employeeId: employee._id,
             date: today,
             checkIn: new Date(),
             notes: data.notes
@@ -18,8 +34,8 @@ export class AttendanceRepository {
         return await attendance.save();
     }
 
-    async checkOutTime(attendanceId: number, data: { location?: string; notes?: string }) {
-        const attendance = await Attendance.findOne({ attendanceId });  
+    async checkOutTime(attendanceId: string, data: { location?: string; notes?: string }) {
+        const attendance = await Attendance.findById(attendanceId);  
         if (!attendance) {
             throw new Error('Attendance record not found');
         }
@@ -36,16 +52,65 @@ export class AttendanceRepository {
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        // Find employee by userId
+        let employee = await EmployeeModel.findOne({ userId: userId } as any);
+        
+        if (!employee) {
+            const user = await User.findById(userId);
+            if (user?.employeeId) {
+                employee = await EmployeeModel.findById(user.employeeId);
+            } else if (user?.email) {
+                employee = await EmployeeModel.findOne({ email: user.email });
+            }
+        }
+        
+        if (!employee) {
+            return null;
+        }
+        
         return await Attendance.findOne({
-            employeeId: new Types.ObjectId(userId),
+            employeeId: employee._id,
             date: { $gte: today, $lt: tomorrow }
         });
     }   
 
     async findByUserId(userId: string, options: any) {
-        const query = Attendance.find({ employeeId: new Types.ObjectId(userId) });  
+        // Find employee by userId
+        let employee = await EmployeeModel.findOne({ userId: new Types.ObjectId(userId) } as any);
+        
+        if (!employee) {
+            const user = await User.findById(userId);
+            if (user?.employeeId) {
+                employee = await EmployeeModel.findById(user.employeeId);
+            } else if (user?.email) {
+                employee = await EmployeeModel.findOne({ email: user.email });
+            }
+        }
+        
+        if (!employee) {
+            return [];
+        }
+        
+        const filter: any = { employeeId: employee._id };
+        
+        // Filter by date range
+        if (options.startDate || options.endDate) {
+            filter.date = {};
+            if (options.startDate) {
+                filter.date.$gte = new Date(options.startDate);
+            }
+            if (options.endDate) {
+                filter.date.$lte = new Date(options.endDate);
+            }
+        }
+        
+        const query = Attendance.find(filter);
+        
         if (options.sort) {
             query.sort(options.sort);
+        } else {
+            query.sort({ date: -1 }); // Default sort by date descending
         }
 
         if (options.limit) {
@@ -58,16 +123,39 @@ export class AttendanceRepository {
     }
 
     async findAll(options: any) {
-        const query = Attendance.find();
+        const filter: any = {};
+        
+        // Filter by employeeId
+        if (options.employeeId) {
+            filter.employeeId = new Types.ObjectId(options.employeeId.toString());
+        }
+        
+        // Filter by date range
+        if (options.startDate || options.endDate) {
+            filter.date = {};
+            if (options.startDate) {
+                filter.date.$gte = new Date(options.startDate);
+            }
+            if (options.endDate) {
+                filter.date.$lte = new Date(options.endDate);
+            }
+        }
+        
+        const query = Attendance.find(filter).populate('employeeId', 'fullName email');
+        
         if (options.sort) {
             query.sort(options.sort);
-        }   
+        } else {
+            query.sort({ date: -1 }); // Default sort by date descending
+        }
+        
         if (options.limit) {
             query.limit(options.limit);
         }
         if (options.skip) {
             query.skip(options.skip);
         }
+        
         return await query.exec();
     }
 

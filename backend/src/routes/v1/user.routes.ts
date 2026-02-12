@@ -16,76 +16,15 @@ router.use(protect);
  * @access  Private/Admin
  */
 router.post('/', 
-    /* 
-        #swagger.tags = ['Users']
-        #swagger.path = '/users'
-        #swagger.summary = 'Tạo user mới'
-        #swagger.description = 'Tạo tài khoản user mới (chỉ admin)'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        required: ["email", "password", "role"],
-                        properties: {
-                            email: {
-                                type: "string",
-                                format: "email",
-                                example: "john.doe@example.com"
-                            },
-                            password: {
-                                type: "string",
-                                example: "Password123!"
-                            },
-                            role: {
-                                type: "string",
-                                enum: ["admin", "user"],
-                                example: "user"
-                            },
-                            employeeId: {
-                                type: "number",
-                                example: 1
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[201] = {
-            description: "User created successfully",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            message: { type: "string", example: "User created successfully" },
-                            data: {
-                                type: "object",
-                                properties: {
-                                    userId: { type: "number", example: 1 },
-                                    username: { type: "string", example: "john_doe" },
-                                    role: { type: "string", example: "user" },
-                                    employeeId: { type: "number", example: 1 }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[400] = {
-            description: "Bad request"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
-        }
-    */
+    /* #swagger.tags = ['Users']
+       #swagger.summary = 'Tạo user mới'
+       #swagger.description = 'Tạo tài khoản user mới (chỉ admin)'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: "object", required: ["email", "password", "role"], properties: { email: { type: "string", format: "email" }, password: { type: "string" }, role: { type: "string", enum: ["admin", "user"] }, employeeId: { type: "number" } } } } } }
+       #swagger.responses[201] = { description: 'User created successfully' }
+       #swagger.responses[400] = { description: 'Bad request' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.USER.CREATE),
     checkHierarchy(1), // Chỉ Admin
     userController.createUser
@@ -97,45 +36,13 @@ router.post('/',
  * @access  Private/Admin
  */
 router.get('/', 
-    /* 
-        #swagger.tags = ['Users']
-        #swagger.path = '/users'
-        #swagger.summary = 'Lấy danh sách users'
-        #swagger.description = 'Lấy tất cả users (chỉ admin)'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.responses[200] = {
-            description: "Success",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            data: {
-                                type: "array",
-                                items: {
-                                    type: "object",
-                                    properties: {
-                                        userId: { type: "number", example: 1 },
-                                        username: { type: "string", example: "john_doe" },
-                                        role: { type: "string", example: "user" },
-                                        employeeId: { type: "number", example: 1 },
-                                        createdAt: { type: "string", example: "2024-01-01T00:00:00.000Z" }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
-        }
-    */
+    /* #swagger.tags = ['Users']
+       #swagger.summary = 'Lấy danh sách users'
+       #swagger.description = 'Lấy tất cả users (chỉ admin)'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.USER.READ_ALL),
     checkHierarchy(2), // HR Manager trở lên
     userController.getAllUsers
@@ -147,52 +54,17 @@ router.get('/',
  * @access  Private/Admin
  */
 router.get('/:id', 
-    /* 
-        #swagger.tags = ['Users']
-        #swagger.path = '/users/:id'
-        #swagger.summary = 'Lấy user theo ID'
-        #swagger.description = 'Lấy thông tin chi tiết user (chỉ admin)'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['id'] = {
-            in: 'path',
-            description: 'User ID',
-            required: true,
-            type: 'integer'
-        }
-        #swagger.responses[200] = {
-            description: "Success",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            data: {
-                                type: "object",
-                                properties: {
-                                    userId: { type: "number", example: 1 },
-                                    username: { type: "string", example: "john_doe" },
-                                    role: { type: "string", example: "user" },
-                                    employeeId: { type: "number", example: 1 }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[404] = {
-            description: "User not found"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
+    /* #swagger.tags = ['Users']
+       #swagger.summary = 'Lấy user theo ID'
+       #swagger.description = 'Lấy thông tin chi tiết user (chỉ admin)'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['id'] = { in: 'path', required: true, type: 'integer', description: 'User ID' }
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[404] = { description: 'User not found' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.USER.READ),
     checkHierarchy(2), // HR Manager trở lên
-        }
-    */
     userController.getUserById
 );
 
@@ -202,84 +74,19 @@ router.get('/:id',
  * @access  Private/Admin
  */
 router.put('/:id', 
-    /* 
-        #swagger.tags = ['Users']
-        #swagger.path = '/users/:id'
-        #swagger.summary = 'Cập nhật user'
-        #swagger.description = 'Cập nhật thông tin user (chỉ admin)'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['id'] = {
-            in: 'path',
-            description: 'User ID',
-            required: true,
-            type: 'integer'
-        }
-        #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            username: {
-                                type: "string",
-                                example: "john_doe_updated"
-                            },
-                            password: {
-                                type: "string",
-                                example: "NewPassword123!"
-                            },
-                            role: {
-                                type: "string",
-                                enum: ["admin", "user"],
-                                example: "user"
-                            },
-                            employeeId: {
-                                type: "number",
-                                example: 1
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[200] = {
-            description: "User updated successfully",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            message: { type: "string", example: "User updated successfully" },
-                            data: {
-                                type: "object",
-                                properties: {
-                                    userId: { type: "number", example: 1 },
-                                    username: { type: "string", example: "john_doe_updated" },
-                                    role: { type: "string", example: "user" }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[404] = {
-            description: "User not found"
-        }
-        #swagger.responses[400] = {
-            description: "Bad request"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
+    /* #swagger.tags = ['Users']
+       #swagger.summary = 'Cập nhật user'
+       #swagger.description = 'Cập nhật thông tin user (chỉ admin)'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['id'] = { in: 'path', required: true, type: 'integer', description: 'User ID' }
+       #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: "object", properties: { username: { type: "string" }, password: { type: "string" }, role: { type: "string", enum: ["admin", "user"] }, employeeId: { type: "number" } } } } } }
+       #swagger.responses[200] = { description: 'User updated successfully' }
+       #swagger.responses[404] = { description: 'User not found' }
+       #swagger.responses[400] = { description: 'Bad request' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.USER.UPDATE),
     checkCanManageUser(), // Kiểm tra quyền quản lý user
-        }
-    */
     userController.updateUser
 );
 
@@ -289,44 +96,17 @@ router.put('/:id',
  * @access  Private/Admin
  */
 router.delete('/:id', 
-    /* 
-        #swagger.tags = ['Users']
-        #swagger.path = '/users/:id'
-        #swagger.summary = 'Xóa user'
-        #swagger.description = 'Xóa user (soft delete - chỉ admin)'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['id'] = {
-            in: 'path',
-            description: 'User ID',
-            required: true,
-            type: 'integer'
-        }
-        #swagger.responses[200] = {
-            description: "User deleted successfully",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            message: { type: "string", example: "User deleted successfully" }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[404] = {
-            description: "User not found"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
+    /* #swagger.tags = ['Users']
+       #swagger.summary = 'Xóa user'
+       #swagger.description = 'Xóa user (soft delete - chỉ admin)'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['id'] = { in: 'path', required: true, type: 'integer', description: 'User ID' }
+       #swagger.responses[200] = { description: 'User deleted successfully' }
+       #swagger.responses[404] = { description: 'User not found' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.USER.DELETE),
     checkHierarchy(1), // Chỉ Admin
-        }
-    */
     userController.deleteUser
 );
 

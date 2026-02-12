@@ -15,11 +15,6 @@ export class EmployeeController {
      * @access  Private
      */
     getAllEmployees = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get all employees'
-            #swagger.description = 'Get all employees with filtering and pagination'
-        */
         const {
             searchTerm,
             departmentId,
@@ -49,11 +44,6 @@ export class EmployeeController {
      * @access  Private
      */
     getEmployeeById = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get employee by ID'
-            #swagger.description = 'Get detailed information of an employee'
-        */
         const employeeId = req.params.id;
         const employee = await this.employeeService.getEmployeeById(employeeId);
 
@@ -69,11 +59,6 @@ export class EmployeeController {
      * @access  Private/Admin
      */
     createEmployee = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Create new employee'
-            #swagger.description = 'Create a new employee record'
-        */
         const employee = await this.employeeService.createEmployee(req.body);
 
         res.status(201).json({
@@ -89,11 +74,6 @@ export class EmployeeController {
      * @access  Private/Admin
      */
     updateEmployee = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Update employee'
-            #swagger.description = 'Update employee information'
-        */
         const employeeId = req.params.id;
         const employee = await this.employeeService.updateEmployee(employeeId, req.body);
 
@@ -110,11 +90,6 @@ export class EmployeeController {
      * @access  Private/Admin
      */
     updateEmploymentStatus = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Update employment status'
-            #swagger.description = 'Update employee employment status'
-        */
         const employeeId = req.params.id;
         const { isActive } = req.body;
 
@@ -143,11 +118,6 @@ export class EmployeeController {
      * @access  Private/Admin
      */
     deleteEmployee = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Delete employee'
-            #swagger.description = 'Soft delete an employee'
-        */
         const employeeId = req.params.id;
         await this.employeeService.deleteEmployee(employeeId);
 
@@ -163,11 +133,6 @@ export class EmployeeController {
      * @access  Private
      */
     getEmployeesByDepartment = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get employees by department'
-            #swagger.description = 'Get all employees in a specific department'
-        */
         const departmentId = req.params.departmentId;
         const { employmentStatus } = req.query;
 
@@ -188,11 +153,6 @@ export class EmployeeController {
      * @access  Private/Admin
      */
     getStatisticsByDepartment = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get employee statistics by department'
-            #swagger.description = 'Get employee count and statistics grouped by department'
-        */
         const statistics = await this.employeeService.getStatisticsByDepartment();
 
         res.status(200).json({
@@ -207,11 +167,6 @@ export class EmployeeController {
      * @access  Private
      */
     getRecentEmployees = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get recent employees'
-            #swagger.description = 'Get list of recently hired employees'
-        */
         const { limit = 5 } = req.query;
         const employees = await this.employeeService.getRecentEmployees(Number(limit));
 
@@ -227,11 +182,6 @@ export class EmployeeController {
      * @access  Private
      */
     searchEmployees = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Search employees'
-            #swagger.description = 'Search employees by name, email, phone, etc.'
-        */
         const { q: searchTerm, page = 1, limit = 10 } = req.query;
 
         if (!searchTerm) {
@@ -260,11 +210,6 @@ export class EmployeeController {
      * @access  Private/Admin
      */
     getOverview = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Employees']
-            #swagger.summary = 'Get employee overview'
-            #swagger.description = 'Get overview statistics of all employees'
-        */
         const overview = await this.employeeService.getOverView();
 
         res.status(200).json({

@@ -1,8 +1,3 @@
-/**
- * Simple Logger Utility
- * For production, consider using Winston or Pino
- */
-
 export enum LogLevel {
     ERROR = 'ERROR',
     WARN = 'WARN',
@@ -20,16 +15,10 @@ interface LogOptions {
 class Logger {
     private isDevelopment = process.env.NODE_ENV === 'development';
 
-    /**
-     * Format timestamp
-     */
     private getTimestamp(): string {
         return new Date().toISOString();
     }
 
-    /**
-     * Get color code for log level
-     */
     private getColorCode(level: LogLevel): string {
         const colors = {
             [LogLevel.ERROR]: '\x1b[31m',   // Red
@@ -40,9 +29,6 @@ class Logger {
         return colors[level] || '\x1b[0m';
     }
 
-    /**
-     * Core log method
-     */
     private log(options: LogOptions): void {
         const { level, message, data, error } = options;
         const timestamp = this.getTimestamp();
@@ -69,10 +55,6 @@ class Logger {
             }
         }
     }
-
-    /**
-     * Log error
-     */
     error(message: string, error?: Error, data?: any): void {
         this.log({
             level: LogLevel.ERROR,
@@ -81,10 +63,6 @@ class Logger {
             data
         });
     }
-
-    /**
-     * Log warning
-     */
     warn(message: string, data?: any): void {
         this.log({
             level: LogLevel.WARN,
@@ -92,10 +70,6 @@ class Logger {
             data
         });
     }
-
-    /**
-     * Log info
-     */
     info(message: string, data?: any): void {
         this.log({
             level: LogLevel.INFO,
@@ -103,10 +77,6 @@ class Logger {
             data
         });
     }
-
-    /**
-     * Log debug (only in development)
-     */
     debug(message: string, data?: any): void {
         if (this.isDevelopment) {
             this.log({
@@ -116,10 +86,6 @@ class Logger {
             });
         }
     }
-
-    /**
-     * Log request
-     */
     request(method: string, url: string, statusCode: number, duration?: number): void {
         const message = `${method} ${url} - ${statusCode}${duration ? ` (${duration}ms)` : ''}`;
         
@@ -133,15 +99,4 @@ class Logger {
     }
 }
 
-// Export singleton instance
 export const logger = new Logger();
-
-/**
- * Example Usage:
- * 
- * logger.error('Database connection failed', error);
- * logger.warn('Deprecated API endpoint used', { endpoint: '/old-api' });
- * logger.info('User logged in', { userId: '123' });
- * logger.debug('Cache hit', { key: 'user:123' });
- * logger.request('GET', '/api/users', 200, 45);
- */

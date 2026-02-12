@@ -2,56 +2,8 @@ import mongoSanitize from 'express-mongo-sanitize';
 import { Request, Response, NextFunction } from 'express';
 import validator from 'validator';
 
-/**
- * 🛡️ INPUT SANITIZATION
- * 
- * Sanitization là quá trình làm sạch input data để ngăn chặn:
- * - NoSQL Injection attacks
- * - XSS (Cross-Site Scripting) attacks
- * - SQL Injection (nếu dùng SQL)
- * - Command Injection
- */
-
-/**
- * 🔒 MONGO SANITIZE MIDDLEWARE
- * 
- * Bảo vệ khỏi NoSQL Injection attacks bằng cách:
- * 1. Remove keys starting with '$' (MongoDB operators)
- * 2. Remove keys containing '.' (dot notation)
- * 
- * ⚠️ VÍ DỤ TAN CÔNG NoSQL Injection:
- * 
- * Normal login:
- * ```json
- * {
- *   "email": "admin@example.com",
- *   "password": "password123"
- * }
- * ```
- * 
- * Malicious login (trying to bypass authentication):
- * ```json
- * {
- *   "email": {"$gt": ""},
- *   "password": {"$gt": ""}
- * }
- * ```
- * 
- * MongoDB query sẽ thành:
- * ```javascript
- * User.findOne({ email: {$gt: ""}, password: {$gt: ""} })
- * // Trả về user đầu tiên → bypass authentication!
- * ```
- * 
- * ✅ SAU KHI SANITIZE:
- * ```json
- * {
- *   "email": "",
- *   "password": ""
- * }
- * ```
- * MongoDB operators đã bị remove → attack fail!
- */
+// mongoSanitize middleware to prevent NoSQL injection
+// Removes any keys containing prohibited characters ($, .)
 export const mongoSanitizeMiddleware = mongoSanitize({
     // Replace prohibited characters with '_'
     replaceWith: '_',
@@ -61,26 +13,7 @@ export const mongoSanitizeMiddleware = mongoSanitize({
     }
 });
 
-/**
- * 🧹 XSS SANITIZATION MIDDLEWARE
- * 
- * Sanitize string inputs để ngăn XSS attacks
- * 
- * ⚠️ VÍ DỤ TAN CÔNG XSS:
- * 
- * Attacker tạo department với tên:
- * ```
- * <script>alert('XSS')</script>
- * <img src=x onerror=alert('XSS')>
- * ```
- * 
- * Khi hiển thị trên UI → script được execute!
- * 
- * ✅ SAU KHI SANITIZE:
- * - Escape HTML entities
- * - Remove script tags
- * - Whitelist allowed HTML (nếu cần)
- */
+// Middleware to sanitize all string inputs in req.body, req.query, req.params
 export const sanitizeStrings = (req: Request, res: Response, next: NextFunction) => {
     try {
         // Sanitize body
@@ -104,9 +37,7 @@ export const sanitizeStrings = (req: Request, res: Response, next: NextFunction)
     }
 };
 
-/**
- * Recursively sanitize object properties
- */
+// Recursive function to sanitize an object
 function sanitizeObject(obj: any): any {
     if (typeof obj !== 'object' || obj === null) {
         return sanitizeValue(obj);
@@ -126,9 +57,7 @@ function sanitizeObject(obj: any): any {
     return sanitized;
 }
 
-/**
- * Sanitize individual value
- */
+// Sanitize individual value
 function sanitizeValue(value: any): any {
     if (typeof value !== 'string') {
         return value;
@@ -143,18 +72,7 @@ function sanitizeValue(value: any): any {
     return sanitized;
 }
 
-/**
- * Sanitize object keys to prevent prototype pollution
- * 
- * ⚠️ PROTOTYPE POLLUTION ATTACK:
- * ```json
- * {
- *   "__proto__": {"isAdmin": true}
- * }
- * ```
- * 
- * ✅ BLOCKED: Remove __proto__, constructor, prototype
- */
+// Sanitize object keys to prevent prototype pollution
 function sanitizeKey(key: string): string {
     const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
     if (dangerousKeys.includes(key.toLowerCase())) {
@@ -163,11 +81,7 @@ function sanitizeKey(key: string): string {
     return key;
 }
 
-/**
- * 🎯 EMAIL SANITIZATION
- * 
- * Normalize và validate email addresses
- */
+// sanitize email input
 export const sanitizeEmail = (email: string): string => {
     if (!email || typeof email !== 'string') {
         return '';
@@ -186,11 +100,7 @@ export const sanitizeEmail = (email: string): string => {
     return sanitized;
 };
 
-/**
- * 🔢 SANITIZE NUMERIC INPUT
- * 
- * Ensure numeric values are actual numbers
- */
+// sanitize number input
 export const sanitizeNumber = (value: any): number | null => {
     if (value === null || value === undefined || value === '') {
         return null;
@@ -204,11 +114,7 @@ export const sanitizeNumber = (value: any): number | null => {
     return num;
 };
 
-/**
- * 📅 SANITIZE DATE INPUT
- * 
- * Validate and sanitize date strings
- */
+// sanitize date input
 export const sanitizeDate = (dateString: any): Date | null => {
     if (!dateString) {
         return null;
@@ -222,11 +128,7 @@ export const sanitizeDate = (dateString: any): Date | null => {
     return date;
 };
 
-/**
- * 🆔 SANITIZE MONGODB OBJECTID
- * 
- * Validate ObjectId format
- */
+// sanitize MongoDB ObjectId
 export const sanitizeObjectId = (id: any): string | null => {
     if (!id || typeof id !== 'string') {
         return null;
@@ -241,11 +143,7 @@ export const sanitizeObjectId = (id: any): string | null => {
     return id;
 };
 
-/**
- * 📝 CUSTOM SANITIZATION FOR SPECIFIC FIELDS
- * 
- * Example: Sanitize username, phone number, etc.
- */
+// Custom sanitizers for specific business logic
 export const customSanitizers = {
     username: (username: string): string => {
         if (!username || typeof username !== 'string') {
@@ -274,50 +172,3 @@ export const customSanitizers = {
         return '';
     }
 };
-
-/**
- * 📊 SANITIZATION SUMMARY:
- * 
- * 1. mongoSanitizeMiddleware:
- *    - Apply globally in app.ts
- *    - Removes MongoDB operators ($, .)
- * 
- * 2. sanitizeStrings:
- *    - Apply globally or per-route
- *    - Escapes HTML entities
- *    - Prevents XSS
- * 
- * 3. Specific sanitizers:
- *    - Use in validators or services
- *    - sanitizeEmail, sanitizeNumber, etc.
- * 
- * 4. Custom sanitizers:
- *    - Use for specific business logic
- *    - Username, phone, URL, etc.
- */
-
-/**
- * 🎯 USAGE EXAMPLES:
- * 
- * 1. In app.ts (Global):
- * ```typescript
- * app.use(mongoSanitizeMiddleware);
- * app.use(sanitizeStrings);
- * ```
- * 
- * 2. In specific route:
- * ```typescript
- * router.post('/login', 
- *   sanitizeStrings,
- *   authLimiter,
- *   validate(loginSchema),
- *   authController.login
- * );
- * ```
- * 
- * 3. In service/validator:
- * ```typescript
- * const email = sanitizeEmail(req.body.email);
- * const phone = customSanitizers.phoneNumber(req.body.phone);
- * ```
- */

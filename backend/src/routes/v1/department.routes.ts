@@ -8,11 +8,6 @@ import { createDepartmentSchema, updateDepartmentSchema, departmentIdSchema } fr
 
 const router = Router();
 const departmentController = new DepartmentController();
-
-// ========================================
-// PROTECTED ROUTES
-// ========================================
-
 router.use(protect);
 
 /**
@@ -46,6 +41,23 @@ router.get('/statistics',
     */
     checkPermission(PERMISSIONS.DEPARTMENT.READ),
     departmentController.getStatistics
+);
+
+/**
+ * @route   POST /api/v1/departments/sync-employee-count
+ * @desc    Đồng bộ lại số lượng nhân viên
+ * @access  Private/Admin
+ */
+router.post('/sync-employee-count',
+    /* 
+        #swagger.tags = ['Departments']
+        #swagger.path = '/departments/sync-employee-count'
+        #swagger.summary = 'Đồng bộ số lượng nhân viên'
+        #swagger.description = 'Đồng bộ lại employeeCount cho tất cả phòng ban'
+        #swagger.security = [{ "bearerAuth": [] }]
+    */
+    checkPermission(PERMISSIONS.DEPARTMENT.MANAGE),
+    departmentController.syncEmployeeCount
 );
 
 /**

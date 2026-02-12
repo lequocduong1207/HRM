@@ -2,6 +2,7 @@ import { AppError } from '../middlewares/index.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
 import { AuditService } from './audit.service.js';
 import { Role } from '../models/role.model.js';
+import { EmployeeModel } from '../models/employee.model.js';
 import {
     hashPassword,
     comparePassword,
@@ -84,10 +85,12 @@ export const register = async (data: RegisterData, ipAddress: string = 'unknown'
             departmentId: user.departmentId?.toString(),
         } as any);
 
+        // Save refresh token to database
+        await authRepo.saveRefreshToken(user._id.toString(), refreshToken);
+
         // Generate email verification token
         const verificationToken = generateEmailVerificationToken(user._id.toString());
         // TODO: Send verification email
-        console.log(`Verification token for ${user.email}: ${verificationToken}`);
 
         // 📝 Audit log - User created
         await AuditService.log({
@@ -272,6 +275,9 @@ export const login = async (email: string, password: string, ipAddress: string =
             departmentId: user.departmentId?.toString(),
         } as any);
 
+        // Save refresh token to database
+        await authRepo.saveRefreshToken(user._id.toString(), refreshToken);
+
         // 📝 Audit log - Login success
         await AuditService.log({
             action: 'LOGIN_SUCCESS',
@@ -403,6 +409,69 @@ export const getUserById = async (userId: string): Promise<UserData | null> => {
 };
 
 /**
+ * Get user profile with employee info (including salary)
+ */
+export const getUserProfile = async (userId: string): Promise<any> => {
+    const user = await authRepo.findByIdWithEmployee(userId);
+    
+    if (!user) {
+        return null;
+    }
+
+    // Populate role
+    await user.populate('roleId');
+    const role = user.roleId as any;
+    
+    if (!role) {
+        return null;
+    }
+
+    // Find employee by userId first
+    let employee = await EmployeeModel.findOne({ userId: user._id } as any);
+    
+    // If not found, try user.employeeId
+    if (!employee && user.employeeId) {
+        await user.populate('employeeId');
+        employee = user.employeeId as any;
+    }
+    
+    // If still not found, try by email
+    if (!employee && user.email) {
+        employee = await EmployeeModel.findOne({ email: user.email });
+    }
+
+    // Populate department if employee exists
+    if (employee && employee.departmentId) {
+        await employee.populate('departmentId');
+    }
+
+    return {
+        userId: user._id.toString(),
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        role: role.name,
+        roleId: role._id.toString(),
+        roleName: role.name,
+        roleDisplayName: role.displayName,
+        departmentId: user.departmentId?.toString(),
+        employee: employee ? {
+            employeeId: employee._id.toString(),
+            fullName: employee.fullName,
+            email: employee.email,
+            phone: employee.phone,
+            position: employee.position,
+            salary: employee.salary || 0,
+            hireDate: employee.hireDate,
+            department: employee.departmentId ? {
+                departmentId: (employee.departmentId as any)._id.toString(),
+                name: (employee.departmentId as any).name,
+            } : null,
+        } : null,
+    };
+};
+
+/**
  * Change password
  */
 export const changePassword = async (
@@ -450,7 +519,6 @@ export const forgotPassword = async (email: string): Promise<void> => {
 
     // TODO: Send email with reset link
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    console.log(`Reset URL for ${email}: ${resetUrl}`);
 };
 
 /**
@@ -494,15 +562,36 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ token:
     try {
         decoded = verifyRefreshToken(refreshToken);
     } catch (error) {
-        throw new AppError('Invalid refresh token', 401);
+        throw new AppError('Invalid or expired refresh token', 401);
     }
 
-    // Generate new access token
+    // Check if refresh token exists in database and is still valid
+    const user = await authRepo.findByRefreshToken(refreshToken);
+    if (!user) {
+        throw new AppError('Refresh token not found or expired', 401);
+    }
+
+    // Verify user is still active
+    if (!user.isActive) {
+        throw new AppError('Account is inactive', 403);
+    }
+
+    // Populate role for token generation
+    await user.populate('roleId');
+    const role = user.roleId as any;
+    
+    if (!role) {
+        throw new AppError('User role not found', 500);
+    }
+
+    // Generate new access token with full payload
     const token = generateToken({
         userId: decoded.userId,
         email: decoded.email,
-        role: decoded.role
-    });
+        role: role.name,
+        roleId: role._id.toString(),
+        departmentId: user.departmentId?.toString(),
+    } as any);
 
     return { token };
 };
@@ -525,7 +614,6 @@ export const resendVerificationEmail = async (email: string): Promise<void> => {
 
     // TODO: Send verification email
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-    console.log(`Verification URL for ${email}: ${verifyUrl}`);
 };
 
 /**
@@ -608,4 +696,11 @@ export const verifyEmail = async (token: string): Promise<void> => {
 export const checkUsernameExists = async (username: string): Promise<boolean> => {
     // This system uses email-only authentication
     return false;
+};
+
+/**
+ * Logout user - clear refresh token from database
+ */
+export const logout = async (userId: string): Promise<void> => {
+    await authRepo.clearRefreshToken(userId);
 };

@@ -1,16 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
 
-/**
- * 📝 AUDIT LOG MODEL
- * 
- * Tracks all important user actions for:
- * - Security monitoring
- * - Compliance (GDPR, SOC2, HIPAA)
- * - Incident investigation
- * - User behavior analysis
- * - Legal requirements
- */
-
 export type AuditAction = 
   // Authentication
   | 'LOGIN_SUCCESS'
@@ -81,10 +70,10 @@ export interface IAuditLog extends Document {
   timestamp: Date;
   
   // Additional context
-  resource?: string;          // e.g., 'User', 'Department', 'Employee'
-  resourceId?: string;        // ID of affected resource
-  changes?: any;              // Before/after data for updates
-  metadata?: any;             // Additional context
+  resource?: string;          
+  resourceId?: string;        
+  changes?: any;              
+  metadata?: any;             
   
   // Result
   success: boolean;
@@ -177,9 +166,5 @@ AuditLogSchema.index({ action: 1, timestamp: -1 });
 AuditLogSchema.index({ severity: 1, timestamp: -1 });
 AuditLogSchema.index({ success: 1, timestamp: -1 });
 AuditLogSchema.index({ ipAddress: 1, timestamp: -1 });
-
-// TTL index - auto delete logs older than 1 year (optional)
-// Uncomment to enable auto-cleanup
-// AuditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 31536000 });
 
 export const AuditLog = model<IAuditLog>('AuditLog', AuditLogSchema);

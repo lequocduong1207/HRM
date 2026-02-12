@@ -3,28 +3,17 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 
 export interface JwtPayload {
-    userId: string;  // MongoDB _id as string
+    userId: string;  
     email: string;
     role: string;
 }
 
-/**
- * Hash password using bcrypt
- * @param password - Plain text password
- * @returns Hashed password
- */
 export const hashPassword = async (password: string): Promise<string> => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     return hashedPassword;
 };
 
-/**
- * Compare password with hashed password
- * @param password - Plain text password
- * @param hashedPassword - Hashed password from database
- * @returns True if passwords match
- */
 export const comparePassword = async (
     password: string,
     hashedPassword: string
@@ -33,11 +22,6 @@ export const comparePassword = async (
     return isMatch;
 };
 
-/**
- * Generate JWT access token
- * @param payload - Token payload (userId, email, role)
- * @returns JWT token
- */
 export const generateToken = (payload: JwtPayload): string => {
     if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not defined in environment variables');
@@ -55,11 +39,6 @@ export const generateToken = (payload: JwtPayload): string => {
     return token;
 };
 
-/**
- * Generate JWT refresh token
- * @param payload - Token payload (userId, email, role)
- * @returns JWT refresh token
- */
 export const generateRefreshToken = (payload: JwtPayload): string => {
     if (!process.env.JWT_REFRESH_SECRET) {
         throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
@@ -77,11 +56,6 @@ export const generateRefreshToken = (payload: JwtPayload): string => {
     return refreshToken;
 };
 
-/**
- * Verify JWT token
- * @param token - JWT token
- * @returns Decoded token payload
- */
 export const verifyToken = (token: string): any => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
@@ -91,11 +65,6 @@ export const verifyToken = (token: string): any => {
     }
 };
 
-/**
- * Verify refresh token
- * @param token - JWT refresh token
- * @returns Decoded token payload
- */
 export const verifyRefreshToken = (token: string): any => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
@@ -105,20 +74,10 @@ export const verifyRefreshToken = (token: string): any => {
     }
 };
 
-/**
- * Generate random token (for email verification, password reset)
- * @param length - Token length (default: 32)
- * @returns Random token string
- */
 export const generateRandomToken = (length: number = 32): string => {
     return crypto.randomBytes(length).toString('hex');
 };
 
-/**
- * Generate password reset token
- * @param userId - User ID
- * @returns JWT token for password reset
- */
 export const generatePasswordResetToken = (userId: string): string => {
     const token = jwt.sign(
         { userId, type: 'password_reset' },
@@ -128,11 +87,6 @@ export const generatePasswordResetToken = (userId: string): string => {
     return token;
 };
 
-/**
- * Generate email verification token
- * @param userId - User ID
- * @returns JWT token for email verification
- */
 export const generateEmailVerificationToken = (userId: string): string => {
     const token = jwt.sign(
         { userId, type: 'email_verification' },
@@ -142,20 +96,10 @@ export const generateEmailVerificationToken = (userId: string): string => {
     return token;
 };
 
-/**
- * Decode token without verification (use for checking expiration)
- * @param token - JWT token
- * @returns Decoded token payload
- */
 export const decodeToken = (token: string): any => {
     return jwt.decode(token);
 };
 
-/**
- * Check if token is expired
- * @param token - JWT token
- * @returns True if token is expired
- */
 export const isTokenExpired = (token: string): boolean => {
     try {
         const decoded: any = jwt.decode(token);
@@ -169,11 +113,6 @@ export const isTokenExpired = (token: string): boolean => {
     }
 };
 
-/**
- * Generate strong random password
- * @param length - Password length (default: 12)
- * @returns Random password
- */
 export const generateRandomPassword = (length: number = 12): string => {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
     let password = '';
@@ -186,11 +125,6 @@ export const generateRandomPassword = (length: number = 12): string => {
     return password;
 };
 
-/**
- * Validate password strength
- * @param password - Password to validate
- * @returns Object with validation result
- */
 export const validatePasswordStrength = (password: string): {
     isValid: boolean;
     errors: string[];

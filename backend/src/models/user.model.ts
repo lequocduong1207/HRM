@@ -1,28 +1,20 @@
 import { Schema, model, Document, Types } from "mongoose";
 import { resetPassword } from "../services";
 
-/**
- * Role của user (DEPRECATED - Use roleId instead)
- * Giữ lại để backward compatibility
- */
 export type UserRole =
   | "admin"
   | "hr_manager"
   | "department_manager"
-  | "manager"
   | "employee";
 
-/**
- * Interface User
- */
 export interface IUser extends Document {
   email: string;
   passwordHash?: string;
   fullName: string;
   phone?: string;
-  role?: UserRole;           // DEPRECATED - Giữ lại cho migration
-  roleId: Types.ObjectId;    // FK → roles (NEW)
-  departmentId?: Types.ObjectId; // FK → departments (cho department manager)
+  role?: UserRole;          
+  roleId: Types.ObjectId;    
+  departmentId?: Types.ObjectId; 
   employeeId?: Types.ObjectId;
   isActive: boolean;
   emailVerified: boolean;
@@ -31,14 +23,12 @@ export interface IUser extends Document {
   updatedAt: Date;
   resetPasswordToken?: string | null;
   resetPasswordExpires?: Date | null;
-  // Account Lockout fields
+  refreshToken?: string | null;
+  refreshTokenExpires?: Date | null;
   loginAttempts: number;
   lockUntil?: Date | null;
 }
 
-/**
- * Schema User
- */
 const userSchema = new Schema<IUser>(
   {
     email: {
@@ -65,14 +55,12 @@ const userSchema = new Schema<IUser>(
       trim: true
     },
 
-    // DEPRECATED - Giữ lại cho migration
     role: {
       type: String,
       enum: ["admin", "hr_manager", "department_manager", "manager", "employee"],
       required: false,
     },
 
-    // NEW - Role ID reference
     roleId: {
       type: Schema.Types.ObjectId,
       ref: "Role",
@@ -80,7 +68,6 @@ const userSchema = new Schema<IUser>(
       index: true,
     },
 
-    // Department ID - Quan trọng cho department manager
     departmentId: {
       type: Schema.Types.ObjectId,
       ref: "Department",
@@ -91,11 +78,6 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false
     },
-
-    /**
-     * FK → employee
-     * NULL nếu là system account
-     */
     employeeId: {
       type: Schema.Types.ObjectId,
       ref: "Employee",
@@ -120,7 +102,15 @@ const userSchema = new Schema<IUser>(
       default: null
     },
     
-    // 🔒 Account Lockout fields
+    refreshToken: {
+      type: String,
+      default: null
+    },
+    refreshTokenExpires: {
+      type: Date,
+      default: null
+    },
+    
     loginAttempts: {
       type: Number,
       default: 0,
@@ -137,34 +127,26 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-/**
- * Không trả password ra API
- */
+// khong tra ve passwordHash va refreshToken
 userSchema.set("toJSON", {
   transform(_, ret) {
     delete ret.passwordHash;
+    delete ret.refreshToken;
     return ret;
   }
 });
 
-/**
- * 🔒 Virtual field: isLocked
- * Check if account is currently locked
- */
+// Virtual property: isLocked
 userSchema.virtual('isLocked').get(function() {
-  // Check if lockUntil exists and is in the future
   return !!(this.lockUntil && this.lockUntil > new Date());
 });
 
-/**
- * 🔒 Method: incrementLoginAttempts
- * Increment failed login attempts and lock account if needed
- */
+// Increment failed login attempts and lock account if needed
 userSchema.methods.incrementLoginAttempts = async function() {
   // If we have a previous lock that has expired, restart at 1
   if (this.lockUntil && this.lockUntil < new Date()) {
     return await this.updateOne({
-      $set: { loginAttempts: 1 },
+      $set: { loginAttempts: 1 }, 
       $unset: { lockUntil: 1 }
     });
   }
@@ -174,7 +156,7 @@ userSchema.methods.incrementLoginAttempts = async function() {
   
   // Lock the account if we've reached max attempts (5)
   const maxAttempts = 5;
-  const lockTime = 30 * 60 * 1000; // 30 minutes
+  const lockTime = 30 * 60 * 1000; 
   
   if (this.loginAttempts + 1 >= maxAttempts && !this.isLocked) {
     updates.$set = { lockUntil: new Date(Date.now() + lockTime) };
@@ -183,10 +165,7 @@ userSchema.methods.incrementLoginAttempts = async function() {
   return await this.updateOne(updates);
 };
 
-/**
- * 🔒 Method: resetLoginAttempts
- * Reset login attempts after successful login
- */
+// Reset login attempts and unlock account
 userSchema.methods.resetLoginAttempts = async function() {
   return await this.updateOne({
     $set: { loginAttempts: 0 },

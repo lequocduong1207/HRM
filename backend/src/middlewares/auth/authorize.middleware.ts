@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../error/error-handler.middleware.js';
 
-type Role = 'admin' | 'hr_manager' | 'manager' | 'employee';
+type Role = 'admin' | 'hr_manager' | 'department_manager' | 'employee';
 
 export const authorize = (...roles: Role[]) => {
     return (req: Request, res: Response, next: NextFunction) => {

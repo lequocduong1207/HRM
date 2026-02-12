@@ -1,46 +1,5 @@
 import helmet from 'helmet';
 
-/**
- * 🛡️ ADVANCED SECURITY HEADERS CONFIGURATION
- * 
- * Helmet helps secure Express apps by setting various HTTP headers.
- * This configuration provides enhanced security for production environments.
- */
-
-/**
- * 🔒 SECURITY HEADERS EXPLAINED:
- * 
- * 1. Content-Security-Policy (CSP)
- *    - Prevents XSS attacks by controlling resource loading
- *    - Defines which sources are allowed for scripts, styles, images, etc.
- * 
- * 2. X-Frame-Options
- *    - Prevents clickjacking attacks
- *    - Stops your site from being embedded in iframes
- * 
- * 3. X-Content-Type-Options
- *    - Prevents MIME type sniffing
- *    - Forces browser to respect declared content type
- * 
- * 4. Strict-Transport-Security (HSTS)
- *    - Forces HTTPS connections
- *    - Prevents protocol downgrade attacks
- * 
- * 5. X-Permitted-Cross-Domain-Policies
- *    - Controls how Flash/PDF can access your site
- * 
- * 6. Referrer-Policy
- *    - Controls how much referrer information is shared
- * 
- * 7. X-DNS-Prefetch-Control
- *    - Controls DNS prefetching to prevent privacy leaks
- */
-
-/**
- * 🎯 PRODUCTION SECURITY HEADERS
- * 
- * Use this configuration for production environments
- */
 export const productionHelmetConfig = helmet({
     // Content Security Policy
     contentSecurityPolicy: {
@@ -119,14 +78,7 @@ export const productionHelmetConfig = helmet({
     hidePoweredBy: true
 });
 
-/**
- * 🔧 DEVELOPMENT SECURITY HEADERS
- * 
- * Relaxed configuration for development environments
- * - Allows inline scripts/styles (for hot reload)
- * - Allows unsafe-eval (for dev tools)
- * - Less strict CSP
- */
+// Development-friendly Helmet configuration
 export const developmentHelmetConfig = helmet({
     contentSecurityPolicy: {
         directives: {
@@ -157,11 +109,9 @@ export const developmentHelmetConfig = helmet({
     hidePoweredBy: true
 });
 
-/**
- * 🎨 API-SPECIFIC CONFIGURATION
- * 
- * For pure API servers (no HTML rendering)
- */
+// API-specific Helmet configuration
+// For pure API servers (no HTML rendering)
+
 export const apiHelmetConfig = helmet({
     contentSecurityPolicy: false, // Not needed for API-only
     
@@ -176,78 +126,3 @@ export const apiHelmetConfig = helmet({
     referrerPolicy: { policy: 'no-referrer' },
     hidePoweredBy: true
 });
-
-/**
- * 📊 HELMET HEADERS SUMMARY:
- * 
- * When helmet is applied, your responses will include:
- * 
- * ```http
- * Content-Security-Policy: default-src 'self'; script-src 'self' ...
- * Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
- * X-Frame-Options: DENY
- * X-Content-Type-Options: nosniff
- * X-XSS-Protection: 1; mode=block
- * Referrer-Policy: strict-origin-when-cross-origin
- * X-DNS-Prefetch-Control: off
- * X-Download-Options: noopen
- * X-Permitted-Cross-Domain-Policies: none
- * ```
- */
-
-/**
- * 🎯 USAGE IN APP.TS:
- * 
- * ```typescript
- * import { productionHelmetConfig, developmentHelmetConfig } from './middlewares/security/helmet.middleware.js';
- * 
- * // Choose config based on environment
- * const helmetConfig = process.env.NODE_ENV === 'production' 
- *   ? productionHelmetConfig 
- *   : developmentHelmetConfig;
- * 
- * app.use(helmetConfig);
- * ```
- */
-
-/**
- * 🚨 COMMON CSP ISSUES & SOLUTIONS:
- * 
- * 1. Issue: "Refused to load the script because it violates CSP"
- *    Solution: Add the domain to scriptSrc directive
- *    
- * 2. Issue: "Refused to execute inline script"
- *    Solution: Use nonce or hash, or add 'unsafe-inline' (not recommended)
- *    
- * 3. Issue: "Refused to connect to WebSocket"
- *    Solution: Add 'ws:' or 'wss:' to connectSrc
- *    
- * 4. Issue: CORS errors after adding helmet
- *    Solution: Helmet doesn't affect CORS, check your CORS middleware
- */
-
-/**
- * 🔍 TESTING SECURITY HEADERS:
- * 
- * 1. Online tools:
- *    - https://securityheaders.com
- *    - https://observatory.mozilla.org
- * 
- * 2. Browser DevTools:
- *    - Network tab → Select response → Headers
- *    - Console will show CSP violations
- * 
- * 3. Command line:
- *    ```bash
- *    curl -I https://your-api.com/api/v1/health
- *    ```
- */
-
-/**
- * 📈 SECURITY GRADES:
- * 
- * With this configuration, you should achieve:
- * - securityheaders.com: A+ grade
- * - Mozilla Observatory: A+ grade
- * - SSL Labs: A grade (with proper SSL config)
- */

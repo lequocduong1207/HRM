@@ -265,6 +265,75 @@
         ]
       }
     },
+    "/auth/profile": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Lấy profile đầy đủ",
+        "description": "Lấy thông tin profile bao gồm employee info và salary",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "userId": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "employee": {
+                          "type": "object",
+                          "properties": {
+                            "employeeId": {
+                              "type": "string"
+                            },
+                            "position": {
+                              "type": "string"
+                            },
+                            "salary": {
+                              "type": "number"
+                            },
+                            "hireDate": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/auth/update-profile": {
       "put": {
         "tags": [
@@ -380,63 +449,28 @@
         ]
       }
     },
-    "/users": {
+    "/": {
       "post": {
         "tags": [
-          "Users"
+          "Leaves"
         ],
-        "summary": "Tạo user mới",
-        "description": "Tạo tài khoản user mới (chỉ admin)",
+        "summary": "Create leave request",
+        "description": "Employee creates a new leave request",
         "responses": {
           "201": {
-            "description": "User created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "User created successfully"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "userId": {
-                          "type": "number",
-                          "example": 1
-                        },
-                        "username": {
-                          "type": "string",
-                          "example": "john_doe"
-                        },
-                        "role": {
-                          "type": "string",
-                          "example": "user"
-                        },
-                        "employeeId": {
-                          "type": "number",
-                          "example": 1
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Leave request created successfully"
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad request - Invalid dates or insufficient leave balance"
           },
           "401": {
             "description": "Unauthorized"
           },
           "403": {
             "description": "Forbidden - Admin access required"
+          },
+          "default": {
+            "description": ""
           }
         },
         "security": [
@@ -451,31 +485,50 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "email",
-                  "password",
-                  "role"
+                  "leaveType",
+                  "startDate",
+                  "endDate",
+                  "reason"
                 ],
                 "properties": {
                   "email": {
                     "type": "string",
-                    "format": "email",
-                    "example": "john.doe@example.com"
+                    "format": "email"
                   },
                   "password": {
-                    "type": "string",
-                    "example": "Password123!"
+                    "type": "string"
                   },
                   "role": {
                     "type": "string",
                     "enum": [
                       "admin",
                       "user"
-                    ],
-                    "example": "user"
+                    ]
                   },
                   "employeeId": {
-                    "type": "number",
-                    "example": 1
+                    "type": "number"
+                  },
+                  "leaveType": {
+                    "type": "string",
+                    "enum": [
+                      "annual",
+                      "sick",
+                      "unpaid",
+                      "maternity",
+                      "paternity",
+                      "other"
+                    ]
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
                   }
                 }
               }
@@ -485,60 +538,64 @@
       },
       "get": {
         "tags": [
-          "Users"
+          "Attendances"
         ],
-        "summary": "Lấy danh sách users",
-        "description": "Lấy tất cả users (chỉ admin)",
+        "summary": "Lấy tất cả chấm công (Admin)",
+        "description": "Lấy tất cả bản ghi chấm công - chỉ admin",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "query",
+            "description": "Lọc theo employee ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Ngày bắt đầu (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Ngày kết thúc (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Số trang",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Số bản ghi mỗi trang",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "userId": {
-                            "type": "number",
-                            "example": 1
-                          },
-                          "username": {
-                            "type": "string",
-                            "example": "john_doe"
-                          },
-                          "role": {
-                            "type": "string",
-                            "example": "user"
-                          },
-                          "employeeId": {
-                            "type": "number",
-                            "example": 1
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "example": "2024-01-01T00:00:00.000Z"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Success"
           },
           "401": {
             "description": "Unauthorized"
           },
           "403": {
             "description": "Forbidden - Admin access required"
+          },
+          "default": {
+            "description": ""
           }
         },
         "security": [
@@ -548,67 +605,39 @@
         ]
       }
     },
-    "/users/:id": {
+    "/{id}": {
       "get": {
         "tags": [
-          "Users"
+          "Leaves"
         ],
-        "summary": "Lấy user theo ID",
-        "description": "Lấy thông tin chi tiết user (chỉ admin)",
+        "summary": "Get leave request details",
+        "description": "Get details of a specific leave request",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "User ID",
             "required": true,
             "schema": {
-              "type": "integer"
-            }
+              "type": "string"
+            },
+            "description": "Leave request ID"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "userId": {
-                          "type": "number",
-                          "example": 1
-                        },
-                        "username": {
-                          "type": "string",
-                          "example": "john_doe"
-                        },
-                        "role": {
-                          "type": "string",
-                          "example": "user"
-                        },
-                        "employeeId": {
-                          "type": "number",
-                          "example": 1
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Success"
           },
           "401": {
             "description": "Unauthorized"
           },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          },
           "404": {
-            "description": "User not found"
+            "description": "Leave request not found"
+          },
+          "default": {
+            "description": ""
           }
         },
         "security": [
@@ -619,67 +648,39 @@
       },
       "put": {
         "tags": [
-          "Users"
+          "Leaves"
         ],
-        "summary": "Cập nhật user",
-        "description": "Cập nhật thông tin user (chỉ admin)",
+        "summary": "Update leave request",
+        "description": "Employee updates their leave request (only if pending)",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "User ID",
             "required": true,
             "schema": {
-              "type": "integer"
-            }
+              "type": "string"
+            },
+            "description": "Leave request ID"
           }
         ],
         "responses": {
           "200": {
-            "description": "User updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "User updated successfully"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "userId": {
-                          "type": "number",
-                          "example": 1
-                        },
-                        "username": {
-                          "type": "string",
-                          "example": "john_doe_updated"
-                        },
-                        "role": {
-                          "type": "string",
-                          "example": "user"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Leave request updated successfully"
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad request - Cannot update this leave request"
           },
           "401": {
             "description": "Unauthorized"
           },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          },
           "404": {
-            "description": "User not found"
+            "description": "Leave request not found"
+          },
+          "default": {
+            "description": ""
           }
         },
         "security": [
@@ -695,910 +696,53 @@
                 "type": "object",
                 "properties": {
                   "username": {
-                    "type": "string",
-                    "example": "john_doe_updated"
+                    "type": "string"
                   },
                   "password": {
-                    "type": "string",
-                    "example": "NewPassword123!"
+                    "type": "string"
                   },
                   "role": {
                     "type": "string",
                     "enum": [
                       "admin",
                       "user"
-                    ],
-                    "example": "user"
+                    ]
                   },
                   "employeeId": {
-                    "type": "number",
-                    "example": 1
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Xóa user",
-        "description": "Xóa user (soft delete - chỉ admin)",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "User ID",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "User deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "User deleted successfully"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "User not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/overview": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Lấy tổng quan nhân viên",
-        "description": "Lấy thống kê tổng quan về nhân viên",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/statistics/by-department": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Thống kê nhân viên theo phòng ban",
-        "description": "Lấy thống kê số lượng nhân viên theo từng phòng ban",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/recent": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Nhân viên mới",
-        "description": "Lấy danh sách nhân viên mới nhất",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/search": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Tìm kiếm nhân viên",
-        "description": "Tìm kiếm nhân viên theo tên, email, số điện thoại",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/department/{departmentId}": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Nhân viên theo phòng ban",
-        "description": "Lấy tất cả nhân viên trong một phòng ban",
-        "parameters": [
-          {
-            "name": "departmentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/{id}": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Chi tiết nhân viên",
-        "description": "Lấy thông tin chi tiết của một nhân viên",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Cập nhật nhân viên",
-        "description": "Cập nhật thông tin nhân viên",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Xóa nhân viên",
-        "description": "Xóa mềm nhân viên (soft delete)",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees": {
-      "get": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Danh sách nhân viên",
-        "description": "Lấy tất cả nhân viên có lọc và phân trang",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Tạo nhân viên mới",
-        "description": "Tạo một nhân viên mới",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/employees/{id}/status": {
-      "patch": {
-        "tags": [
-          "Employees"
-        ],
-        "summary": "Cập nhật trạng thái",
-        "description": "Cập nhật trạng thái làm việc của nhân viên",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/attendances/check-in": {
-      "post": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Chấm công vào",
-        "description": "Check in - chấm công vào ca làm việc",
-        "responses": {
-          "201": {
-            "description": "Check-in successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Check-in successful"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "attendanceId": {
-                          "type": "number",
-                          "example": 1
-                        },
-                        "employeeId": {
-                          "type": "number",
-                          "example": 1
-                        },
-                        "checkInTime": {
-                          "type": "string",
-                          "example": "2024-01-01T08:00:00.000Z"
-                        },
-                        "location": {
-                          "type": "string",
-                          "example": "Office"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Already checked in today"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "location": {
-                    "type": "string",
-                    "example": "Office"
+                    "type": "number"
                   },
-                  "notes": {
-                    "type": "string",
-                    "example": "On time"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/attendances/check-out": {
-      "put": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Chấm công ra",
-        "description": "Check out - chấm công ra ca làm việc",
-        "responses": {
-          "200": {
-            "description": "Check-out successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Check-out successful"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "attendanceId": {
-                          "type": "number",
-                          "example": 1
-                        },
-                        "checkInTime": {
-                          "type": "string",
-                          "example": "2024-01-01T08:00:00.000Z"
-                        },
-                        "checkOutTime": {
-                          "type": "string",
-                          "example": "2024-01-01T17:00:00.000Z"
-                        },
-                        "workingHours": {
-                          "type": "number",
-                          "example": 9
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Need to check in first or already checked out"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "location": {
-                    "type": "string",
-                    "example": "Office"
-                  },
-                  "notes": {
-                    "type": "string",
-                    "example": "Completed tasks"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/attendances/my-attendances": {
-      "get": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Lịch sử chấm công của tôi",
-        "description": "Lấy lịch sử chấm công của user đang đăng nhập",
-        "parameters": [
-          {
-            "name": "startDate",
-            "in": "query",
-            "description": "Ngày bắt đầu (YYYY-MM-DD)",
-            "required": false,
-            "example": "2024-01-01",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "in": "query",
-            "description": "Ngày kết thúc (YYYY-MM-DD)",
-            "required": false,
-            "example": "2024-01-31",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Số trang",
-            "required": false,
-            "example": 1,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Số bản ghi mỗi trang",
-            "required": false,
-            "example": 10,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "attendanceId": {
-                                "type": "number",
-                                "example": 1
-                              },
-                              "date": {
-                                "type": "string",
-                                "example": "2024-01-01"
-                              },
-                              "checkInTime": {
-                                "type": "string",
-                                "example": "08:00:00"
-                              },
-                              "checkOutTime": {
-                                "type": "string",
-                                "example": "17:00:00"
-                              },
-                              "workingHours": {
-                                "type": "number",
-                                "example": 9
-                              }
-                            }
-                          }
-                        },
-                        "pagination": {
-                          "type": "object",
-                          "properties": {
-                            "page": {
-                              "type": "number",
-                              "example": 1
-                            },
-                            "limit": {
-                              "type": "number",
-                              "example": 10
-                            },
-                            "total": {
-                              "type": "number",
-                              "example": 100
-                            },
-                            "totalPages": {
-                              "type": "number",
-                              "example": 10
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/attendances/today": {
-      "get": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Trạng thái chấm công hôm nay",
-        "description": "Kiểm tra đã check in/out hôm nay chưa",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "attendanceId": {
-                          "type": "number",
-                          "example": 1
-                        },
-                        "checkInTime": {
-                          "type": "string",
-                          "example": "08:00:00"
-                        },
-                        "checkOutTime": {
-                          "type": "string",
-                          "example": null
-                        },
-                        "hasCheckedIn": {
-                          "type": "boolean",
-                          "example": true
-                        },
-                        "hasCheckedOut": {
-                          "type": "boolean",
-                          "example": false
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/attendances": {
-      "get": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Lấy tất cả chấm công (Admin)",
-        "description": "Lấy tất cả bản ghi chấm công - chỉ admin",
-        "parameters": [
-          {
-            "name": "employeeId",
-            "in": "query",
-            "description": "Lọc theo employee ID",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "startDate",
-            "in": "query",
-            "description": "Ngày bắt đầu (YYYY-MM-DD)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "in": "query",
-            "description": "Ngày kết thúc (YYYY-MM-DD)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Số trang",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Số bản ghi mỗi trang",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - Admin access required"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/attendances/report/summary": {
-      "get": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Báo cáo tổng hợp chấm công (Admin)",
-        "description": "Lấy báo cáo thống kê chấm công - chỉ admin",
-        "parameters": [
-          {
-            "name": "employeeId",
-            "in": "query",
-            "description": "Lọc theo employee ID",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "startDate",
-            "in": "query",
-            "description": "Ngày bắt đầu (YYYY-MM-DD)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "in": "query",
-            "description": "Ngày kết thúc (YYYY-MM-DD)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - Admin access required"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/attendances/{id}": {
-      "get": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Lấy chi tiết chấm công",
-        "description": "Lấy thông tin chi tiết một bản ghi chấm công",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Attendance ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Attendance not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "Attendances"
-        ],
-        "summary": "Cập nhật chấm công (Admin)",
-        "description": "Cập nhật thông tin chấm công - chỉ admin",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Attendance ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Attendance updated successfully"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - Admin access required"
-          },
-          "404": {
-            "description": "Attendance not found"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
                   "checkInTime": {
                     "type": "string",
-                    "format": "time",
-                    "example": "08:00:00"
+                    "format": "time"
                   },
                   "checkOutTime": {
                     "type": "string",
-                    "format": "time",
-                    "example": "17:00:00"
+                    "format": "time"
                   },
                   "notes": {
+                    "type": "string"
+                  },
+                  "leaveType": {
                     "type": "string",
-                    "example": "Manual adjustment"
+                    "enum": [
+                      "annual",
+                      "sick",
+                      "unpaid",
+                      "maternity",
+                      "paternity",
+                      "other"
+                    ]
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
                   }
                 }
               }
@@ -1635,6 +779,398 @@
           },
           "404": {
             "description": "Attendance not found"
+          },
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/overview": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Lấy tổng quan nhân viên",
+        "description": "Lấy thống kê tổng quan về nhân viên",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/statistics/by-department": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Thống kê nhân viên theo phòng ban",
+        "description": "Lấy thống kê số lượng nhân viên theo từng phòng ban",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/recent": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Nhân viên mới",
+        "description": "Lấy danh sách nhân viên mới nhất",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/search": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Tìm kiếm nhân viên",
+        "description": "Tìm kiếm nhân viên theo tên, email, số điện thoại",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/department/{departmentId}": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Nhân viên theo phòng ban",
+        "description": "Lấy tất cả nhân viên trong một phòng ban",
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/{id}/status": {
+      "patch": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Cập nhật trạng thái",
+        "description": "Cập nhật trạng thái làm việc của nhân viên",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/check-in": {
+      "post": {
+        "tags": [
+          "Attendances"
+        ],
+        "summary": "Chấm công vào",
+        "description": "Check in - chấm công vào ca làm việc",
+        "responses": {
+          "201": {
+            "description": "Check-in successful"
+          },
+          "400": {
+            "description": "Already checked in today"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "type": "string"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/check-out": {
+      "put": {
+        "tags": [
+          "Attendances"
+        ],
+        "summary": "Chấm công ra",
+        "description": "Check out - chấm công ra ca làm việc",
+        "responses": {
+          "200": {
+            "description": "Check-out successful"
+          },
+          "400": {
+            "description": "Need to check in first or already checked out"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "type": "string"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/my-attendances": {
+      "get": {
+        "tags": [
+          "Attendances"
+        ],
+        "summary": "Lịch sử chấm công của tôi",
+        "description": "Lấy lịch sử chấm công của user đang đăng nhập",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Ngày bắt đầu (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Ngày kết thúc (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Số trang",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Số bản ghi mỗi trang",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/today": {
+      "get": {
+        "tags": [
+          "Attendances"
+        ],
+        "summary": "Trạng thái chấm công hôm nay",
+        "description": "Kiểm tra đã check in/out hôm nay chưa",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/my-stats": {
+      "get": {
+        "tags": [
+          "Attendances"
+        ],
+        "summary": "Thống kê chấm công của tôi",
+        "description": "Lấy thống kê chấm công của user đang đăng nhập",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Ngày bắt đầu (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Ngày kết thúc (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/report/summary": {
+      "get": {
+        "tags": [
+          "Attendances"
+        ],
+        "summary": "Báo cáo tổng hợp chấm công (Admin)",
+        "description": "Lấy báo cáo thống kê chấm công - chỉ admin",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "query",
+            "description": "Lọc theo employee ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Ngày bắt đầu (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Ngày kết thúc (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
           }
         },
         "security": [
@@ -1670,6 +1206,25 @@
         ],
         "summary": "Thống kê phòng ban",
         "description": "Lấy thống kê số lượng nhân viên theo phòng ban",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/departments/sync-employee-count": {
+      "post": {
+        "tags": [
+          "Departments"
+        ],
+        "summary": "Đồng bộ số lượng nhân viên",
+        "description": "Đồng bộ lại employeeCount cho tất cả phòng ban",
         "responses": {
           "default": {
             "description": ""
@@ -1832,138 +1387,932 @@
     },
     "/admin/all": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Leaves"
+        ],
+        "summary": "Get all leave requests",
+        "description": "Get all leave requests with filtering (Admin only)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "cancelled"
+            ],
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "employeeId",
+            "in": "query",
+            "description": "Filter by employee ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "departmentId",
+            "in": "query",
+            "description": "Filter by department ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "format": "date",
+            "description": "Filter from date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "format": "date",
+            "description": "Filter to date",
+            "schema": {
+              "type": "string"
+            }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/admin/statistics": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Leaves"
+        ],
+        "summary": "Get leave statistics",
+        "description": "Get leave statistics (Admin only)",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Year for statistics",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "description": "Month for statistics",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "departmentId",
+            "in": "query",
+            "description": "Filter by department",
+            "schema": {
+              "type": "string"
+            }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/admin/{id}/approve": {
       "put": {
-        "description": "",
+        "tags": [
+          "Leaves"
+        ],
+        "summary": "Approve or reject leave request",
+        "description": "Approve or reject a leave request (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Leave request ID"
+          }
+        ],
         "responses": {
-          "default": {
-            "description": ""
+          "200": {
+            "description": "Leave request updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          },
+          "404": {
+            "description": "Leave request not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ]
+                  },
+                  "adminNotes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/admin/{id}": {
       "delete": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Leaves"
+        ],
+        "summary": "Delete leave request",
+        "description": "Delete a leave request (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Leave request ID"
           }
-        }
-      }
-    },
-    "/": {
-      "post": {
-        "description": "",
+        ],
         "responses": {
-          "default": {
-            "description": ""
+          "200": {
+            "description": "Leave request deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          },
+          "404": {
+            "description": "Leave request not found"
           }
-        }
-      },
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        },
+        "security": [
+          {
+            "bearerAuth": []
           }
-        }
+        ]
       }
     },
     "/my-leaves/used-days": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Leaves"
+        ],
+        "summary": "Get used leave days",
+        "description": "Get the number of leave days used by employee",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Year to calculate",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "leaveType",
+            "in": "query",
+            "enum": [
+              "annual",
+              "sick",
+              "unpaid",
+              "maternity",
+              "paternity",
+              "other"
+            ],
+            "description": "Filter by leave type",
+            "schema": {
+              "type": "string"
+            }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/my-leaves": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Leaves"
+        ],
+        "summary": "Get my leave requests",
+        "description": "Get all leave requests of current user",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "cancelled"
+            ],
+            "description": "Filter by status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Filter by year",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "leaveType",
+            "in": "query",
+            "description": "Filter by leave type",
+            "schema": {
+              "type": "string"
+            }
           }
-        }
-      }
-    },
-    "/{id}": {
-      "get": {
-        "description": "",
+        ],
         "responses": {
-          "default": {
-            "description": ""
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized"
           }
-        }
-      },
-      "put": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        },
+        "security": [
+          {
+            "bearerAuth": []
           }
-        }
+        ]
       }
     },
     "/{id}/cancel": {
       "put": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Leaves"
+        ],
+        "summary": "Cancel leave request",
+        "description": "Employee cancels their leave request",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Leave request ID"
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leave request cancelled successfully"
+          },
+          "400": {
+            "description": "Bad request - Cannot cancel this leave request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Leave request not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
-    "/statistics": {
+    "/audit-logs": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Audit Logs"
+        ],
+        "summary": "Get audit logs",
+        "description": "Get audit logs with filtering and pagination (Admin only)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "example": 1,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "required": false,
+            "example": 10,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Filter by user ID",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Filter by action",
+            "required": false,
+            "enum": [
+              "CREATE",
+              "UPDATE",
+              "DELETE",
+              "LOGIN",
+              "LOGOUT",
+              "READ"
+            ],
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "description": "Filter by resource",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Filter from date",
+            "required": false,
+            "format": "date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Filter to date",
+            "required": false,
+            "format": "date",
+            "schema": {
+              "type": "string"
+            }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "logs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string",
+                                "example": "507f1f77bcf86cd799439011"
+                              },
+                              "userId": {
+                                "type": "string",
+                                "example": "507f1f77bcf86cd799439012"
+                              },
+                              "action": {
+                                "type": "string",
+                                "example": "CREATE"
+                              },
+                              "resource": {
+                                "type": "string",
+                                "example": "employee"
+                              },
+                              "resourceId": {
+                                "type": "string",
+                                "example": "507f1f77bcf86cd799439013"
+                              },
+                              "details": {
+                                "type": "object"
+                              },
+                              "ipAddress": {
+                                "type": "string",
+                                "example": "192.168.1.1"
+                              },
+                              "userAgent": {
+                                "type": "string",
+                                "example": "Mozilla/5.0"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "example": "2024-01-01T00:00:00.000Z"
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "number",
+                              "example": 100
+                            },
+                            "page": {
+                              "type": "number",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "number",
+                              "example": 10
+                            },
+                            "totalPages": {
+                              "type": "number",
+                              "example": 10
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
-    "/suspicious": {
+    "/audit-logs/statistics": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Audit Logs"
+        ],
+        "summary": "Get audit statistics",
+        "description": "Get audit log statistics (Admin only)",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Statistics from date",
+            "required": false,
+            "format": "date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Statistics to date",
+            "required": false,
+            "format": "date",
+            "schema": {
+              "type": "string"
+            }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalLogs": {
+                          "type": "number",
+                          "example": 1000
+                        },
+                        "actionBreakdown": {
+                          "type": "object",
+                          "properties": {
+                            "CREATE": {
+                              "type": "number",
+                              "example": 200
+                            },
+                            "UPDATE": {
+                              "type": "number",
+                              "example": 300
+                            },
+                            "DELETE": {
+                              "type": "number",
+                              "example": 50
+                            },
+                            "LOGIN": {
+                              "type": "number",
+                              "example": 400
+                            },
+                            "LOGOUT": {
+                              "type": "number",
+                              "example": 50
+                            }
+                          }
+                        },
+                        "resourceBreakdown": {
+                          "type": "object",
+                          "properties": {
+                            "employee": {
+                              "type": "number",
+                              "example": 300
+                            },
+                            "user": {
+                              "type": "number",
+                              "example": 250
+                            },
+                            "attendance": {
+                              "type": "number",
+                              "example": 450
+                            }
+                          }
+                        },
+                        "topUsers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "userId": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
-    "/user/{userId}": {
+    "/audit-logs/suspicious": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
+        "tags": [
+          "Audit Logs"
+        ],
+        "summary": "Get suspicious activities",
+        "description": "Get potentially suspicious activities (Admin only)",
+        "parameters": [
+          {
+            "name": "severity",
+            "in": "query",
+            "description": "Filter by severity level",
+            "required": false,
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of results",
+            "required": false,
+            "example": 50,
+            "schema": {
+              "type": "integer"
+            }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439011"
+                          },
+                          "userId": {
+                            "type": "string"
+                          },
+                          "action": {
+                            "type": "string"
+                          },
+                          "resource": {
+                            "type": "string"
+                          },
+                          "severity": {
+                            "type": "string",
+                            "example": "high"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "example": "Multiple failed login attempts"
+                          },
+                          "ipAddress": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/audit-logs/user/{userId}": {
+      "get": {
+        "tags": [
+          "Audit Logs"
+        ],
+        "summary": "Get user audit logs",
+        "description": "Get audit logs for a specific user (Admin or own user)",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "example": 1,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "required": false,
+            "example": 20,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Filter by action",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "logs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string"
+                              },
+                              "userId": {
+                                "type": "string"
+                              },
+                              "action": {
+                                "type": "string"
+                              },
+                              "resource": {
+                                "type": "string"
+                              },
+                              "resourceId": {
+                                "type": "string"
+                              },
+                              "ipAddress": {
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "number"
+                            },
+                            "page": {
+                              "type": "number"
+                            },
+                            "limit": {
+                              "type": "number"
+                            },
+                            "totalPages": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Not authorized to view this user's logs"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },

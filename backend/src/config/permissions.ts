@@ -1,18 +1,13 @@
-/**
- * Permission Configuration
- * Định nghĩa tất cả permissions trong hệ thống
- */
-
-export const PERMISSIONS = {
+const PERMISSIONS = {
   // Employee Management
   EMPLOYEE: {
     CREATE: 'employee:create',
-    READ_ALL: 'employee:read:all',         // Xem tất cả nhân viên
-    READ_DEPT: 'employee:read:dept',       // Xem nhân viên trong phòng ban
-    READ_SELF: 'employee:read:self',       // Xem thông tin của mình
-    UPDATE: 'employee:update',             // Cập nhật bất kỳ nhân viên
-    UPDATE_DEPT: 'employee:update:dept',   // Cập nhật nhân viên trong phòng
-    UPDATE_SELF: 'employee:update:self',   // Cập nhật thông tin của mình
+    READ_ALL: 'employee:read:all',         
+    READ_DEPT: 'employee:read:dept',       
+    READ_SELF: 'employee:read:self',       
+    UPDATE: 'employee:update',             
+    UPDATE_DEPT: 'employee:update:dept',   
+    UPDATE_SELF: 'employee:update:self',   
     DELETE: 'employee:delete',
   },
   
@@ -99,7 +94,7 @@ export const PERMISSIONS = {
 /**
  * Permission Groups - Nhóm các permissions thường dùng cùng nhau
  */
-export const PERMISSION_GROUPS = {
+const PERMISSION_GROUPS = {
   EMPLOYEE_FULL: [
     PERMISSIONS.EMPLOYEE.CREATE,
     PERMISSIONS.EMPLOYEE.READ_ALL,
@@ -133,7 +128,7 @@ export const PERMISSION_GROUPS = {
 /**
  * Flatten tất cả permissions thành array
  */
-export const ALL_PERMISSIONS = Object.values(PERMISSIONS)
+const ALL_PERMISSIONS = Object.values(PERMISSIONS)
   .flatMap(category => Object.values(category));
 
 /**
@@ -159,7 +154,7 @@ export interface IRoleConfig {
   isActive: boolean;
 }
 
-export const DEFAULT_ROLES: Record<string, IRoleConfig> = {
+const DEFAULT_ROLES: Record<string, IRoleConfig> = {
   ADMIN: {
     name: 'admin',
     displayName: 'Administrator',
@@ -285,7 +280,7 @@ export const DEFAULT_ROLES: Record<string, IRoleConfig> = {
 /**
  * Helper function để group permissions theo resource
  */
-export const groupPermissionsByResource = (permissions: string[]): IPermission[] => {
+const groupPermissionsByResource = (permissions: string[]): IPermission[] => {
   const grouped: Record<string, Set<string>> = {};
   
   permissions.forEach(permission => {
@@ -302,4 +297,12 @@ export const groupPermissionsByResource = (permissions: string[]): IPermission[]
     resource,
     actions: Array.from(actions),
   }));
+};
+
+export {   
+  PERMISSIONS,
+  PERMISSION_GROUPS,
+  ALL_PERMISSIONS,
+  DEFAULT_ROLES,
+  groupPermissionsByResource,
 };

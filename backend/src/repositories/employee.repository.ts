@@ -130,16 +130,12 @@ export class EmployeeRepository {
 
     async findByDepartment(departmentId: string, options?: PaginationOptions): Promise<{
         data: EmployeeDocument[];
-        pagination: { page: number; limit: number; total: number };
+        pagination?: { page: number; limit: number; total: number };
     }> {
-        const page = options?.page || 1;
-        const limit = options?.limit || 10;
-        const skip = (page - 1) * limit;
-        
         if (!Types.ObjectId.isValid(departmentId)) {
             return {
                 data: [],
-                pagination: { page, limit, total: 0 }
+                pagination: options?.page ? { page: 1, limit: 10, total: 0 } : undefined
             };
         }
         
@@ -148,6 +144,17 @@ export class EmployeeRepository {
         if (options?.employmentStatus) {
             query.employmentStatus = options.employmentStatus;
         }
+
+        // Nếu không có pagination options, trả về tất cả
+        if (!options?.page && !options?.limit) {
+            const data = await EmployeeModel.find(query).populate('departmentId').exec();
+            return { data };
+        }
+
+        // Có pagination
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const skip = (page - 1) * limit;
 
         const [data, total] = await Promise.all([
             EmployeeModel.find(query).populate('departmentId').skip(skip).limit(limit).exec(),

@@ -1,21 +1,15 @@
 import app from './app.js';
-import { checkConnection } from './config/db.js';
+import checkConnection from './config/db.js';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
-/**
- * Start server
- */
 const startServer = async () => {
     try {
-        // Connect to database
         checkConnection();
         
-        // Start listening
         app.listen(PORT, () => {
             console.log('='.repeat(50));
             console.log(`🚀 Server is running on port ${PORT}`);
@@ -45,5 +39,4 @@ process.on('uncaughtException', (err: Error) => {
     process.exit(1);
 });
 
-// Start the server
 startServer();

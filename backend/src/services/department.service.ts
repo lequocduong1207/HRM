@@ -88,4 +88,31 @@ export class DepartmentService {
         return restored;
     }
 
+    async syncEmployeeCount(departmentId?: string) {
+        const { DepartmentModel } = await import('../models/department.model.js');
+        
+        if (departmentId) {
+            // Đồng bộ một phòng ban cụ thể
+            const count = await this.departmentRepository.countEmployeesByDepartment(departmentId);
+            await DepartmentModel.findByIdAndUpdate(
+                departmentId,
+                { employeeCount: count },
+                { new: true }
+            );
+            return { [departmentId]: count };
+        }
+
+        // Đồng bộ tất cả phòng ban
+        const departments = await DepartmentModel.find();
+        const results: Record<string, number> = {};
+
+        for (const dept of departments) {
+            const count = await this.departmentRepository.countEmployeesByDepartment(dept._id.toString());
+            await DepartmentModel.findByIdAndUpdate(dept._id, { employeeCount: count });
+            results[dept._id.toString()] = count;
+        }
+
+        return results;
+    }
+
 }

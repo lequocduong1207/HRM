@@ -1,8 +1,5 @@
 import Joi from 'joi';
 
-/**
- * Check-in validation schema
- */
 export const checkInSchema = {
     body: Joi.object({
         latitude: Joi.number()

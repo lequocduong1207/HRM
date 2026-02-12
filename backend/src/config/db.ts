@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-export async function checkConnection() {
+dotenv.config();
+
+async function checkConnection() {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI as string);
     console.log("✅ Kết nối MongoDB thành công!");
@@ -11,3 +13,5 @@ export async function checkConnection() {
     throw err;
   }
 }
+
+export default checkConnection;

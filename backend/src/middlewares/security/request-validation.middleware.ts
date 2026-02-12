@@ -1,37 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../error/error-handler.middleware.js';
 
-/**
- * 🛡️ REQUEST SIZE VALIDATION
- * 
- * Prevents Denial of Service (DoS) attacks via:
- * - Large JSON payloads
- * - Large URL-encoded payloads
- * - Deeply nested objects
- * - Excessive array lengths
- * - Too many query parameters
- */
-
-/**
- * 🔒 VALIDATE JSON PAYLOAD SIZE
- * 
- * Prevents attacks using extremely large JSON payloads that can:
- * - Consume excessive memory
- * - Cause CPU exhaustion during parsing
- * - Fill up disk space (if logged)
- * - Crash the application
- * 
- * Example attack:
- * ```json
- * {
- *   "data": "A".repeat(100000000) // 100MB string
- * }
- * ```
- */
 export const validateJsonSize = (req: Request, res: Response, next: NextFunction) => {
-    // Already handled by express.json({ limit: '10mb' })
-    // This is an additional check
-    
     const contentLength = req.headers['content-length'];
     const maxSize = 10 * 1024 * 1024; // 10MB
     
@@ -42,27 +12,6 @@ export const validateJsonSize = (req: Request, res: Response, next: NextFunction
     next();
 };
 
-/**
- * 🔒 VALIDATE OBJECT DEPTH
- * 
- * Prevents attacks using deeply nested objects that can:
- * - Cause stack overflow
- * - Exhaust memory during recursive operations
- * - Slow down validation/sanitization
- * 
- * Example attack:
- * ```json
- * {
- *   "a": {
- *     "b": {
- *       "c": {
- *         // ... 1000 levels deep
- *       }
- *     }
- *   }
- * }
- * ```
- */
 export const validateObjectDepth = (req: Request, res: Response, next: NextFunction) => {
     const maxDepth = 10;
     
@@ -80,9 +29,7 @@ export const validateObjectDepth = (req: Request, res: Response, next: NextFunct
     next();
 };
 
-/**
- * Helper: Calculate object nesting depth
- */
+// Helper: Calculate object depth
 function getObjectDepth(obj: any, currentDepth = 0): number {
     if (obj === null || typeof obj !== 'object') {
         return currentDepth;
@@ -102,21 +49,7 @@ function getObjectDepth(obj: any, currentDepth = 0): number {
     return depths.length > 0 ? Math.max(...depths) : currentDepth;
 }
 
-/**
- * 🔒 VALIDATE ARRAY LENGTH
- * 
- * Prevents attacks using extremely long arrays that can:
- * - Consume excessive memory
- * - Cause timeout during iteration
- * - Overwhelm database with bulk operations
- * 
- * Example attack:
- * ```json
- * {
- *   "items": [1, 2, 3, ..., 1000000] // 1 million items
- * }
- * ```
- */
+// Validate array lengths in request body
 export const validateArrayLength = (req: Request, res: Response, next: NextFunction) => {
     const maxArrayLength = 1000; // Max 1000 items in any array
     
@@ -134,9 +67,7 @@ export const validateArrayLength = (req: Request, res: Response, next: NextFunct
     next();
 };
 
-/**
- * Helper: Check all arrays in object
- */
+// Helper: Check all arrays in object
 function checkArrayLengths(obj: any, maxLength: number): boolean {
     if (obj === null || typeof obj !== 'object') {
         return false;
@@ -154,19 +85,6 @@ function checkArrayLengths(obj: any, maxLength: number): boolean {
     );
 }
 
-/**
- * 🔒 VALIDATE QUERY PARAMETERS
- * 
- * Prevents attacks using excessive query parameters:
- * - Too many parameters
- * - Extremely long parameter values
- * - Duplicate parameters
- * 
- * Example attack:
- * ```
- * GET /api/users?param1=value1&param2=value2&...&param1000=value1000
- * ```
- */
 export const validateQueryParams = (req: Request, res: Response, next: NextFunction) => {
     const maxParams = 50;
     const maxParamLength = 1000; // characters
@@ -202,14 +120,6 @@ export const validateQueryParams = (req: Request, res: Response, next: NextFunct
     next();
 };
 
-/**
- * 🔒 VALIDATE STRING LENGTHS
- * 
- * Prevents attacks using extremely long strings:
- * - Long names, descriptions, etc.
- * - Buffer overflow attempts
- * - Memory exhaustion
- */
 export const validateStringLengths = (req: Request, res: Response, next: NextFunction) => {
     const maxStringLength = 10000; // 10,000 characters
     
@@ -227,9 +137,7 @@ export const validateStringLengths = (req: Request, res: Response, next: NextFun
     next();
 };
 
-/**
- * Helper: Check all strings in object
- */
+// Helper: Check all strings in object
 function checkStringLengths(obj: any, maxLength: number): boolean {
     if (obj === null) {
         return false;
@@ -252,12 +160,6 @@ function checkStringLengths(obj: any, maxLength: number): boolean {
     );
 }
 
-/**
- * 🎯 COMBINED REQUEST VALIDATION MIDDLEWARE
- * 
- * Combines all validation checks into one middleware
- * Use this for convenience instead of applying each individually
- */
 export const validateRequest = [
     validateJsonSize,
     validateObjectDepth,
@@ -265,82 +167,3 @@ export const validateRequest = [
     validateQueryParams,
     validateStringLengths
 ];
-
-/**
- * 📊 VALIDATION SUMMARY:
- * 
- * Limits enforced:
- * - JSON payload: 10MB maximum
- * - Object depth: 10 levels maximum
- * - Array length: 1,000 items maximum
- * - Query params: 50 parameters maximum
- * - String length: 10,000 characters maximum
- * 
- * These limits prevent:
- * - Memory exhaustion
- * - CPU exhaustion
- * - Stack overflow
- * - Disk space exhaustion
- * - Application crashes
- */
-
-/**
- * 🎯 USAGE EXAMPLES:
- * 
- * 1. Apply to all routes (in app.ts):
- * ```typescript
- * app.use('/api', validateRequest);
- * ```
- * 
- * 2. Apply to specific routes:
- * ```typescript
- * router.post('/departments', 
- *   validateObjectDepth,
- *   validateArrayLength,
- *   departmentController.create
- * );
- * ```
- * 
- * 3. Apply individual validations:
- * ```typescript
- * router.get('/search', 
- *   validateQueryParams,
- *   searchController.search
- * );
- * ```
- */
-
-/**
- * 🚨 ATTACK SCENARIOS PREVENTED:
- * 
- * 1. JSON Bomb:
- *    POST with 100MB JSON → Rejected (validateJsonSize)
- * 
- * 2. Billion Laughs:
- *    Deeply nested objects → Rejected (validateObjectDepth)
- * 
- * 3. Array Flood:
- *    Array with 1 million items → Rejected (validateArrayLength)
- * 
- * 4. Query Spam:
- *    100 query parameters → Rejected (validateQueryParams)
- * 
- * 5. String Bomb:
- *    String with 1 million characters → Rejected (validateStringLengths)
- */
-
-/**
- * ⚖️ BALANCING SECURITY & USABILITY:
- * 
- * These limits are set conservatively. You may need to adjust based on:
- * - Your application requirements
- * - Server resources
- * - Expected use cases
- * 
- * For example:
- * - File upload API: Increase maxSize
- * - Bulk operations: Increase maxArrayLength
- * - Search API: Increase maxParams
- * 
- * Always monitor and adjust based on real usage patterns!
- */

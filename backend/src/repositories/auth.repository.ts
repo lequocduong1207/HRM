@@ -30,6 +30,10 @@ export class AuthRepository {
         return await User.findById(userId);
     }
 
+    async findByIdWithEmployee(userId: string): Promise<IUser | null> {
+        return await User.findById(userId);
+    }
+
     async updateLastLogin(userId: string): Promise<void> {
         await User.findByIdAndUpdate(userId, { lastLogin: new Date() });
     }   
@@ -101,5 +105,33 @@ export class AuthRepository {
                 resetPasswordExpires: expires
             }
         );
+    }
+
+    async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
+        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                refreshToken,
+                refreshTokenExpires: expires
+            }
+        );
+    }
+
+    async clearRefreshToken(userId: string): Promise<void> {
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                refreshToken: null,
+                refreshTokenExpires: null
+            }
+        );
+    }
+
+    async findByRefreshToken(refreshToken: string): Promise<IUser | null> {
+        return await User.findOne({
+            refreshToken,
+            refreshTokenExpires: { $gt: new Date() }
+        });
     }
 }

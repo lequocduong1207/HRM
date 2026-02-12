@@ -88,6 +88,7 @@ export class DepartmentRepository {
         const [data, total] = await Promise.all([
             DepartmentModel.find(query)
                 .populate('managerId')
+                .populate('employees')
                 .skip(skip)
                 .limit(limit)
                 .sort({ name: 1 })

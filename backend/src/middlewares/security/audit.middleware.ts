@@ -2,26 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { AuditService } from '../../services/audit.service.js';
 import { AuditAction } from '../../models/audit-log.model.js';
 
-/**
- * 📝 AUDIT MIDDLEWARE
- * 
- * Automatically logs API requests and responses
- * 
- * Features:
- * - Logs all API calls with method, path, user info
- * - Captures request/response data (excluding sensitive fields)
- * - Tracks response time
- * - Logs errors automatically
- * 
- * Usage in routes:
- * ```typescript
- * router.post('/employees', auditMiddleware('EMPLOYEE_CREATED'), createEmployee);
- * router.put('/employees/:id', auditMiddleware('EMPLOYEE_UPDATED'), updateEmployee);
- * router.delete('/employees/:id', auditMiddleware('EMPLOYEE_DELETED'), deleteEmployee);
- * ```
- */
-
-// Sensitive fields to exclude from logging
 const SENSITIVE_FIELDS = [
   'password',
   'confirmPassword',
@@ -37,22 +17,19 @@ const SENSITIVE_FIELDS = [
   'socialSecurity'
 ];
 
-/**
- * Create an audit middleware for a specific action
- */
+// Create an audit middleware for a specific action
+
 export function auditMiddleware(action: AuditAction, resourceName?: string) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
     const user = (req as any).user;
     
-    // Capture the original send and json methods
     const originalSend = res.send;
     const originalJson = res.json;
     
     let responseBody: any;
     let responseLogged = false;
     
-    // Override res.send
     res.send = function (body: any) {
       if (!responseLogged) {
         responseBody = body;
@@ -62,7 +39,6 @@ export function auditMiddleware(action: AuditAction, resourceName?: string) {
       return originalSend.call(this, body);
     };
     
-    // Override res.json
     res.json = function (body: any) {
       if (!responseLogged) {
         responseBody = body;
@@ -76,14 +52,11 @@ export function auditMiddleware(action: AuditAction, resourceName?: string) {
       const responseTime = Date.now() - startTime;
       const success = res.statusCode >= 200 && res.statusCode < 400;
       
-      // Determine resource and resourceId from request
       const resource = resourceName || extractResourceFromPath(req.path);
       const resourceId = req.params.id || extractResourceId(responseBody);
       
-      // Clean request body (remove sensitive data)
       const cleanedBody = removeSensitiveData(req.body);
       
-      // Extract changes if it's an update operation
       const changes = action.includes('UPDATED') ? cleanedBody : undefined;
       
       await AuditService.log({
@@ -113,10 +86,8 @@ export function auditMiddleware(action: AuditAction, resourceName?: string) {
   };
 }
 
-/**
- * Generic API request logger
- * Logs all API requests automatically
- */
+// Audit all API requests
+
 export function auditApiRequests() {
   return async (req: Request, res: Response, next: NextFunction) => {
     // Skip health checks and static files

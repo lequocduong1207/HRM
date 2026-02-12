@@ -1,12 +1,3 @@
-/**
- * Migration Script: Setup RBAC System
- * 
- * Script này sẽ:
- * 1. Tạo các role mặc định (admin, hr_manager, department_manager, employee)
- * 2. Migrate existing users từ role string sang roleId
- * 3. Backup dữ liệu cũ
- */
-
 import mongoose from 'mongoose';
 import { Role } from '../models/role.model.js';
 import { User } from '../models/user.model.js';

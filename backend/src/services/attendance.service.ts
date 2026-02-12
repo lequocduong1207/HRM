@@ -36,7 +36,7 @@ export class AttendanceService {
             throw new AppError('You have already checked out today', 400);
         }
 
-        const attendance = await this.attendanceRepository.checkOutTime(today.attendanceId!, data);
+        const attendance = await this.attendanceRepository.checkOutTime(today._id.toString(), data);
         return attendance;
     }
 
@@ -52,6 +52,38 @@ export class AttendanceService {
      */
     async getTodayAttendance(userId: string) {
         return await this.attendanceRepository.getTodayAttendance(userId);
+    }
+
+    /**
+     * Lấy thống kê chấm công của user
+     */
+    async getMyStats(userId: string, options: { startDate?: string; endDate?: string }) {
+        // Set default date range to current month if not provided
+        const now = new Date();
+        const startDate = options.startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const endDate = options.endDate || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+        // Get attendance records for the period
+        const attendances = await this.attendanceRepository.findByUserId(userId, {
+            startDate,
+            endDate,
+            limit: 1000 // Get all records for the period
+        });
+
+        // Calculate statistics
+        const totalDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const presentDays = attendances.filter((a: any) => a.status === 'present').length;
+        const lateDays = attendances.filter((a: any) => a.isLate).length;
+        const absentDays = attendances.filter((a: any) => a.status === 'absent').length;
+        const totalWorkHours = attendances.reduce((sum: number, a: any) => sum + (a.workHours || 0), 0);
+
+        return {
+            totalDays,
+            presentDays,
+            lateDays,
+            absentDays,
+            totalWorkHours
+        };
     }
 
     /**

@@ -1,24 +1,18 @@
 import { Schema, model, Document, Model } from "mongoose";
 
-/**
- * Permission Interface
- */
 export interface IPermission {
-  resource: string;      // 'employee', 'attendance', 'leave', etc.
-  actions: string[];     // ['create', 'read:all', 'update', 'delete']
+  resource: string;      
+  actions: string[];     
 }
 
-/**
- * Role Interface
- */
 export interface IRole extends Document {
-  name: string;              // 'admin', 'hr_manager', 'department_manager', 'employee'
-  displayName: string;       // 'Administrator', 'HR Manager', etc.
-  description: string;       // Mô tả vai trò
-  permissions: IPermission[]; // Danh sách permissions
-  isSystemRole: boolean;     // Không cho phép xóa/sửa role hệ thống
-  isActive: boolean;         // Trạng thái active
-  hierarchy: number;         // Thứ tự phân cấp: admin=1, hr_manager=2, manager=3, employee=4
+  name: string;             
+  displayName: string;       
+  description: string;      
+  permissions: IPermission[]; 
+  isSystemRole: boolean;     
+  isActive: boolean;         
+  hierarchy: number;         
   createdAt: Date;
   updatedAt: Date;
   
@@ -29,18 +23,13 @@ export interface IRole extends Document {
   getAllPermissions(): string[];
 }
 
-/**
- * Role Model Interface (for static methods)
- */
+// Role Model with static methods
 export interface IRoleModel extends Model<IRole> {
   findByName(name: string): Promise<IRole | null>;
   findByHierarchy(minLevel: number, maxLevel: number): Promise<IRole[]>;
   nameExists(name: string, excludeId?: string): Promise<boolean>;
 }
 
-/**
- * Permission Schema
- */
 const permissionSchema = new Schema<IPermission>({
   resource: {
     type: String,
@@ -54,9 +43,6 @@ const permissionSchema = new Schema<IPermission>({
   }],
 }, { _id: false });
 
-/**
- * Role Schema
- */
 const roleSchema = new Schema<IRole>(
   {
     name: {
@@ -85,7 +71,6 @@ const roleSchema = new Schema<IRole>(
       default: [],
       validate: {
         validator: function(v: IPermission[]) {
-          // Validate that permissions array is not empty for non-employee roles
           return v.length > 0;
         },
         message: 'Role must have at least one permission'
@@ -118,19 +103,11 @@ const roleSchema = new Schema<IRole>(
   }
 );
 
-/**
- * Indexes
- */
+// Indexes
 roleSchema.index({ name: 1, isActive: 1 });
 roleSchema.index({ hierarchy: 1 });
 
-/**
- * Instance Methods
- */
-
-/**
- * Check if role has a specific permission
- */
+// check methods
 roleSchema.methods.hasPermission = function(permission: string): boolean {
   const [resource, ...actionParts] = permission.split(':');
   const action = actionParts.join(':');
@@ -144,23 +121,17 @@ roleSchema.methods.hasPermission = function(permission: string): boolean {
   return resourcePermission.actions.includes(action);
 };
 
-/**
- * Check if role has any of the given permissions
- */
+// Check if role has any of the given permissions
 roleSchema.methods.hasAnyPermission = function(permissions: string[]): boolean {
   return permissions.some(permission => this.hasPermission(permission));
 };
 
-/**
- * Check if role has all of the given permissions
- */
+// Check if role has all of the given permissions
 roleSchema.methods.hasAllPermissions = function(permissions: string[]): boolean {
   return permissions.every(permission => this.hasPermission(permission));
 };
 
-/**
- * Get all permissions as flat array
- */
+// Get all permissions as flat array
 roleSchema.methods.getAllPermissions = function(): string[] {
   const permissions: string[] = [];
   
@@ -173,20 +144,12 @@ roleSchema.methods.getAllPermissions = function(): string[] {
   return permissions;
 };
 
-/**
- * Static Methods
- */
-
-/**
- * Find role by name
- */
+// find role by name
 roleSchema.statics.findByName = function(name: string) {
   return this.findOne({ name: name.toLowerCase(), isActive: true });
 };
 
-/**
- * Find roles by hierarchy level
- */
+// find roles by hierarchy range
 roleSchema.statics.findByHierarchy = function(
   minLevel: number,
   maxLevel: number
@@ -197,9 +160,7 @@ roleSchema.statics.findByHierarchy = function(
   }).sort({ hierarchy: 1 });
 };
 
-/**
- * Check if role name exists
- */
+// check if role name exists
 roleSchema.statics.nameExists = async function(
   name: string,
   excludeId?: string
@@ -212,7 +173,4 @@ roleSchema.statics.nameExists = async function(
   return count > 0;
 };
 
-/**
- * Export model
- */
 export const Role = model<IRole, IRoleModel>("Role", roleSchema);

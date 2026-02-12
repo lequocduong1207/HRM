@@ -1,15 +1,11 @@
 import { Router } from 'express';
 import { protect, validate } from '../../middlewares/index.js';
-import * as authController from '../../controllers/auth.controller.js';
+import { AuthController } from '../../controllers/auth.controller.js';
 import { loginSchema, registerSchema, changePasswordSchema, resetPasswordSchema } from '../../validators/index.js';
 import { authLimiter, sensitiveOperationsLimiter } from '../../middlewares/security/rate-limit.middleware.js';
 
 const router = Router();
-
-// ========================================
-// PUBLIC ROUTES (with rate limiting)
-// ========================================
-
+const authController = new AuthController();
 /**
  * @route   POST /api/v1/auth/login
  * @desc    Login with email
@@ -17,7 +13,7 @@ const router = Router();
  * @security Rate limited: 5 requests per 15 minutes
  */
 router.post('/login',
-    authLimiter, // 🔴 STRICT: 5 requests/15min
+    authLimiter, 
     validate(loginSchema),
     authController.login,
     /* 
@@ -92,7 +88,7 @@ router.post('/login',
  * @security Rate limited: 10 requests per 15 minutes
  */
 router.post('/refresh-token',
-    sensitiveOperationsLimiter, // 🟡 MODERATE: 10 requests/15min
+    sensitiveOperationsLimiter, 
     authController.refreshToken,
     /* 
         #swagger.tags = ['Auth']
@@ -146,10 +142,6 @@ router.post('/refresh-token',
     authController.refreshToken
 );
 
-// ========================================
-// PROTECTED ROUTES
-// ========================================
-
 router.use(protect);
 
 /**
@@ -195,6 +187,54 @@ router.get('/me',
         }
     */
     authController.getCurrentUser
+);
+
+/**
+ * @route   GET /api/v1/auth/profile
+ * @desc    Get current user profile with employee info
+ * @access  Private
+ */
+router.get('/profile',
+    /* 
+        #swagger.tags = ['Auth']
+        #swagger.path = '/auth/profile'
+        #swagger.summary = 'Lấy profile đầy đủ'
+        #swagger.description = 'Lấy thông tin profile bao gồm employee info và salary'
+        #swagger.security = [{ "bearerAuth": [] }]
+        #swagger.responses[200] = {
+            description: "Success",
+            content: {
+                "application/json": {
+                    schema: {
+                        type: "object",
+                        properties: {
+                            success: { type: "boolean", example: true },
+                            data: {
+                                type: "object",
+                                properties: {
+                                    userId: { type: "string" },
+                                    email: { type: "string" },
+                                    fullName: { type: "string" },
+                                    phone: { type: "string" },
+                                    role: { type: "string" },
+                                    employee: {
+                                        type: "object",
+                                        properties: {
+                                            employeeId: { type: "string" },
+                                            position: { type: "string" },
+                                            salary: { type: "number" },
+                                            hireDate: { type: "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    */
+    authController.getProfile
 );
 
 /**

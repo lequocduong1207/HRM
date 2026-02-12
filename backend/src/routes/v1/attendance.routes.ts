@@ -7,75 +7,21 @@ import { PERMISSIONS } from '../../config/permissions.js';
 const router = Router();
 const attendanceController = new AttendanceController();
 
-// Tất cả routes đều yêu cầu authentication
 router.use(protect);
-
-// ========================================
-// USER ROUTES - Chấm công cá nhân
-// ========================================
-
 /**
  * @route   POST /api/v1/attendances/check-in
  * @desc    Check in (chấm công vào)
  * @access  Private/Employee
  */
 router.post('/check-in',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/check-in'
-        #swagger.summary = 'Chấm công vào'
-        #swagger.description = 'Check in - chấm công vào ca làm việc'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.requestBody = {
-            required: false,
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            location: {
-                                type: "string",
-                                example: "Office"
-                            },
-                            notes: {
-                                type: "string",
-                                example: "On time"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[201] = {
-            description: "Check-in successful",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            message: { type: "string", example: "Check-in successful" },
-                            data: {
-                                type: "object",
-                                properties: {
-                                    attendanceId: { type: "number", example: 1 },
-                                    employeeId: { type: "number", example: 1 },
-                                    checkInTime: { type: "string", example: "2024-01-01T08:00:00.000Z" },
-                                    location: { type: "string", example: "Office" }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[400] = {
-            description: "Already checked in today"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Chấm công vào'
+       #swagger.description = 'Check in - chấm công vào ca làm việc'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.requestBody = { required: false, content: { "application/json": { schema: { type: "object", properties: { location: { type: "string" }, notes: { type: "string" } } } } } }
+       #swagger.responses[201] = { description: 'Check-in successful' }
+       #swagger.responses[400] = { description: 'Already checked in today' }
+       #swagger.responses[401] = { description: 'Unauthorized' } */
     attendanceController.checkIn
 );
 
@@ -85,62 +31,14 @@ router.post('/check-in',
  * @access  Private
  */
 router.put('/check-out',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/check-out'
-        #swagger.summary = 'Chấm công ra'
-        #swagger.description = 'Check out - chấm công ra ca làm việc'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.requestBody = {
-            required: false,
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            location: {
-                                type: "string",
-                                example: "Office"
-                            },
-                            notes: {
-                                type: "string",
-                                example: "Completed tasks"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[200] = {
-            description: "Check-out successful",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            message: { type: "string", example: "Check-out successful" },
-                            data: {
-                                type: "object",
-                                properties: {
-                                    attendanceId: { type: "number", example: 1 },
-                                    checkInTime: { type: "string", example: "2024-01-01T08:00:00.000Z" },
-                                    checkOutTime: { type: "string", example: "2024-01-01T17:00:00.000Z" },
-                                    workingHours: { type: "number", example: 9 }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[400] = {
-            description: "Need to check in first or already checked out"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Chấm công ra'
+       #swagger.description = 'Check out - chấm công ra ca làm việc'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.requestBody = { required: false, content: { "application/json": { schema: { type: "object", properties: { location: { type: "string" }, notes: { type: "string" } } } } } }
+       #swagger.responses[200] = { description: 'Check-out successful' }
+       #swagger.responses[400] = { description: 'Need to check in first or already checked out' }
+       #swagger.responses[401] = { description: 'Unauthorized' } */
     attendanceController.checkOut
 );
 
@@ -150,84 +48,16 @@ router.put('/check-out',
  * @access  Private
  */
 router.get('/my-attendances',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/my-attendances'
-        #swagger.summary = 'Lịch sử chấm công của tôi'
-        #swagger.description = 'Lấy lịch sử chấm công của user đang đăng nhập'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['startDate'] = {
-            in: 'query',
-            description: 'Ngày bắt đầu (YYYY-MM-DD)',
-            required: false,
-            type: 'string',
-            example: '2024-01-01'
-        }
-        #swagger.parameters['endDate'] = {
-            in: 'query',
-            description: 'Ngày kết thúc (YYYY-MM-DD)',
-            required: false,
-            type: 'string',
-            example: '2024-01-31'
-        }
-        #swagger.parameters['page'] = {
-            in: 'query',
-            description: 'Số trang',
-            required: false,
-            type: 'integer',
-            example: 1
-        }
-        #swagger.parameters['limit'] = {
-            in: 'query',
-            description: 'Số bản ghi mỗi trang',
-            required: false,
-            type: 'integer',
-            example: 10
-        }
-        #swagger.responses[200] = {
-            description: "Success",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            data: {
-                                type: "object",
-                                properties: {
-                                    data: {
-                                        type: "array",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                attendanceId: { type: "number", example: 1 },
-                                                date: { type: "string", example: "2024-01-01" },
-                                                checkInTime: { type: "string", example: "08:00:00" },
-                                                checkOutTime: { type: "string", example: "17:00:00" },
-                                                workingHours: { type: "number", example: 9 }
-                                            }
-                                        }
-                                    },
-                                    pagination: {
-                                        type: "object",
-                                        properties: {
-                                            page: { type: "number", example: 1 },
-                                            limit: { type: "number", example: 10 },
-                                            total: { type: "number", example: 100 },
-                                            totalPages: { type: "number", example: 10 }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Lịch sử chấm công của tôi'
+       #swagger.description = 'Lấy lịch sử chấm công của user đang đăng nhập'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['startDate'] = { in: 'query', type: 'string', description: 'Ngày bắt đầu (YYYY-MM-DD)' }
+       #swagger.parameters['endDate'] = { in: 'query', type: 'string', description: 'Ngày kết thúc (YYYY-MM-DD)' }
+       #swagger.parameters['page'] = { in: 'query', type: 'integer', description: 'Số trang' }
+       #swagger.parameters['limit'] = { in: 'query', type: 'integer', description: 'Số bản ghi mỗi trang' }
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[401] = { description: 'Unauthorized' } */
     attendanceController.getMyAttendances
 );
 
@@ -237,98 +67,49 @@ router.get('/my-attendances',
  * @access  Private
  */
 router.get('/today',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/today'
-        #swagger.summary = 'Trạng thái chấm công hôm nay'
-        #swagger.description = 'Kiểm tra đã check in/out hôm nay chưa'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.responses[200] = {
-            description: "Success",
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            success: { type: "boolean", example: true },
-                            data: {
-                                type: "object",
-                                properties: {
-                                    attendanceId: { type: "number", example: 1 },
-                                    checkInTime: { type: "string", example: "08:00:00" },
-                                    checkOutTime: { type: "string", example: null },
-                                    hasCheckedIn: { type: "boolean", example: true },
-                                    hasCheckedOut: { type: "boolean", example: false }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Trạng thái chấm công hôm nay'
+       #swagger.description = 'Kiểm tra đã check in/out hôm nay chưa'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[401] = { description: 'Unauthorized' } */
     attendanceController.getTodayAttendance
 );
 
-// ========================================
-// ADMIN ROUTES - Quản lý chấm công
-// ========================================
-
+/**
+ * @route   GET /api/v1/attendances/my-stats
+ * @desc    Lấy thống kê chấm công của user
+ * @access  Private
+ */
+router.get('/my-stats',
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Thống kê chấm công của tôi'
+       #swagger.description = 'Lấy thống kê chấm công của user đang đăng nhập'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['startDate'] = { in: 'query', type: 'string', description: 'Ngày bắt đầu (YYYY-MM-DD)' }
+       #swagger.parameters['endDate'] = { in: 'query', type: 'string', description: 'Ngày kết thúc (YYYY-MM-DD)' }
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[401] = { description: 'Unauthorized' } */
+    attendanceController.getMyStats
+);
 /**
  * @route   GET /api/v1/attendances
  * @desc    Lấy tất cả attendances (Admin)
  * @access  Private/Admin
  */
 router.get('/',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances'
-        #swagger.summary = 'Lấy tất cả chấm công (Admin)'
-        #swagger.description = 'Lấy tất cả bản ghi chấm công - chỉ admin'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['employeeId'] = {
-            in: 'query',
-            description: 'Lọc theo employee ID',
-            required: false,
-            type: 'integer'
-        }
-        #swagger.parameters['startDate'] = {
-            in: 'query',
-            description: 'Ngày bắt đầu (YYYY-MM-DD)',
-            required: false,
-            type: 'string'
-        }
-        #swagger.parameters['endDate'] = {
-            in: 'query',
-            description: 'Ngày kết thúc (YYYY-MM-DD)',
-            required: false,
-            type: 'string'
-        }
-        #swagger.parameters['page'] = {
-            in: 'query',
-            description: 'Số trang',
-            required: false,
-            type: 'integer'
-        }
-        #swagger.parameters['limit'] = {
-            in: 'query',
-            description: 'Số bản ghi mỗi trang',
-            required: false,
-            type: 'integer'
-        }
-        #swagger.responses[200] = {
-            description: "Success"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Lấy tất cả chấm công (Admin)'
+       #swagger.description = 'Lấy tất cả bản ghi chấm công - chỉ admin'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['employeeId'] = { in: 'query', type: 'integer', description: 'Lọc theo employee ID' }
+       #swagger.parameters['startDate'] = { in: 'query', type: 'string', description: 'Ngày bắt đầu (YYYY-MM-DD)' }
+       #swagger.parameters['endDate'] = { in: 'query', type: 'string', description: 'Ngày kết thúc (YYYY-MM-DD)' }
+       #swagger.parameters['page'] = { in: 'query', type: 'integer', description: 'Số trang' }
+       #swagger.parameters['limit'] = { in: 'query', type: 'integer', description: 'Số bản ghi mỗi trang' }
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.ATTENDANCE.READ_ALL),
     attendanceController.getAllAttendances
 );
@@ -339,40 +120,16 @@ router.get('/',
  * @access  Private/Admin
  */
 router.get('/report/summary',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/report/summary'
-        #swagger.summary = 'Báo cáo tổng hợp chấm công (Admin)'
-        #swagger.description = 'Lấy báo cáo thống kê chấm công - chỉ admin'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['employeeId'] = {
-            in: 'query',
-            description: 'Lọc theo employee ID',
-            required: false,
-            type: 'integer'
-        }
-        #swagger.parameters['startDate'] = {
-            in: 'query',
-            description: 'Ngày bắt đầu (YYYY-MM-DD)',
-            required: false,
-            type: 'string'
-        }
-        #swagger.parameters['endDate'] = {
-            in: 'query',
-            description: 'Ngày kết thúc (YYYY-MM-DD)',
-            required: false,
-            type: 'string'
-        }
-        #swagger.responses[200] = {
-            description: "Success"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Báo cáo tổng hợp chấm công (Admin)'
+       #swagger.description = 'Lấy báo cáo thống kê chấm công - chỉ admin'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['employeeId'] = { in: 'query', type: 'integer', description: 'Lọc theo employee ID' }
+       #swagger.parameters['startDate'] = { in: 'query', type: 'string', description: 'Ngày bắt đầu (YYYY-MM-DD)' }
+       #swagger.parameters['endDate'] = { in: 'query', type: 'string', description: 'Ngày kết thúc (YYYY-MM-DD)' }
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.ATTENDANCE.READ_ALL),
     attendanceController.getAttendanceSummary
 );
@@ -383,28 +140,14 @@ router.get('/report/summary',
  * @access  Private
  */
 router.get('/:id',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/{id}'
-        #swagger.summary = 'Lấy chi tiết chấm công'
-        #swagger.description = 'Lấy thông tin chi tiết một bản ghi chấm công'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['id'] = {
-            in: 'path',
-            description: 'Attendance ID',
-            required: true,
-            type: 'integer'
-        }
-        #swagger.responses[200] = {
-            description: "Success"
-        }
-        #swagger.responses[404] = {
-            description: "Attendance not found"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Lấy chi tiết chấm công'
+       #swagger.description = 'Lấy thông tin chi tiết một bản ghi chấm công'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['id'] = { in: 'path', required: true, type: 'integer', description: 'Attendance ID' }
+       #swagger.responses[200] = { description: 'Success' }
+       #swagger.responses[404] = { description: 'Attendance not found' }
+       #swagger.responses[401] = { description: 'Unauthorized' } */
     attendanceController.getAttendanceById
 );
 
@@ -414,57 +157,16 @@ router.get('/:id',
  * @access  Private/Admin
  */
 router.put('/:id',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/{id}'
-        #swagger.summary = 'Cập nhật chấm công (Admin)'
-        #swagger.description = 'Cập nhật thông tin chấm công - chỉ admin'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['id'] = {
-            in: 'path',
-            description: 'Attendance ID',
-            required: true,
-            type: 'integer'
-        }
-        #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: {
-                        type: "object",
-                        properties: {
-                            checkInTime: {
-                                type: "string",
-                                format: "time",
-                                example: "08:00:00"
-                            },
-                            checkOutTime: {
-                                type: "string",
-                                format: "time",
-                                example: "17:00:00"
-                            },
-                            notes: {
-                                type: "string",
-                                example: "Manual adjustment"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        #swagger.responses[200] = {
-            description: "Attendance updated successfully"
-        }
-        #swagger.responses[404] = {
-            description: "Attendance not found"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Cập nhật chấm công (Admin)'
+       #swagger.description = 'Cập nhật thông tin chấm công - chỉ admin'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['id'] = { in: 'path', required: true, type: 'integer', description: 'Attendance ID' }
+       #swagger.requestBody = { required: true, content: { "application/json": { schema: { type: "object", properties: { checkInTime: { type: "string", format: "time" }, checkOutTime: { type: "string", format: "time" }, notes: { type: "string" } } } } } }
+       #swagger.responses[200] = { description: 'Attendance updated successfully' }
+       #swagger.responses[404] = { description: 'Attendance not found' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.ATTENDANCE.UPDATE),
     checkHierarchy(2), // HR Manager trở lên
     attendanceController.updateAttendance
@@ -476,31 +178,15 @@ router.put('/:id',
  * @access  Private/Admin
  */
 router.delete('/:id',
-    /* 
-        #swagger.tags = ['Attendances']
-        #swagger.path = '/attendances/{id}'
-        #swagger.summary = 'Xóa chấm công (Admin)'
-        #swagger.description = 'Xóa bản ghi chấm công - chỉ admin'
-        #swagger.security = [{ "bearerAuth": [] }]
-        #swagger.parameters['id'] = {
-            in: 'path',
-            description: 'Attendance ID',
-            required: true,
-            type: 'integer'
-        }
-        #swagger.responses[200] = {
-            description: "Attendance deleted successfully"
-        }
-        #swagger.responses[404] = {
-            description: "Attendance not found"
-        }
-        #swagger.responses[401] = {
-            description: "Unauthorized"
-        }
-        #swagger.responses[403] = {
-            description: "Forbidden - Admin access required"
-        }
-    */
+    /* #swagger.tags = ['Attendances']
+       #swagger.summary = 'Xóa chấm công (Admin)'
+       #swagger.description = 'Xóa bản ghi chấm công - chỉ admin'
+       #swagger.security = [{ "bearerAuth": [] }]
+       #swagger.parameters['id'] = { in: 'path', required: true, type: 'integer', description: 'Attendance ID' }
+       #swagger.responses[200] = { description: 'Attendance deleted successfully' }
+       #swagger.responses[404] = { description: 'Attendance not found' }
+       #swagger.responses[401] = { description: 'Unauthorized' }
+       #swagger.responses[403] = { description: 'Forbidden - Admin access required' } */
     checkPermission(PERMISSIONS.ATTENDANCE.DELETE),
     checkHierarchy(1), // Chỉ Admin
     attendanceController.deleteAttendance

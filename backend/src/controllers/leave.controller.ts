@@ -15,29 +15,6 @@ export class LeaveController {
      * @access  Private
      */
     createLeave = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Create leave request'
-            #swagger.description = 'Employee creates a new leave request'
-            #swagger.parameters['body'] = {
-                in: 'body',
-                required: true,
-                schema: {
-                    type: 'object',
-                    required: ['leaveType', 'startDate', 'endDate'],
-                    properties: {
-                        leaveType: { 
-                            type: 'string', 
-                            enum: ['Annual', 'Sick', 'Unpaid', 'Maternity', 'Paternity', 'Other'],
-                            example: 'Annual' 
-                        },
-                        startDate: { type: 'string', format: 'date', example: '2026-02-01' },
-                        endDate: { type: 'string', format: 'date', example: '2026-02-05' },
-                        reason: { type: 'string', example: 'Family vacation' }
-                    }
-                }
-            }
-        */
         const userId = req.user!.userId;
         const leaveData = req.body;
 
@@ -56,40 +33,6 @@ export class LeaveController {
      * @access  Private
      */
     getMyLeaves = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Get my leave requests'
-            #swagger.description = 'Get all leave requests of current user'
-            #swagger.parameters['status'] = {
-                in: 'query',
-                description: 'Filter by status',
-                required: false,
-                type: 'string',
-                enum: ['Pending', 'Approved', 'Rejected', 'Cancelled']
-            }
-            #swagger.parameters['startDate'] = {
-                in: 'query',
-                description: 'Start date (YYYY-MM-DD)',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['endDate'] = {
-                in: 'query',
-                description: 'End date (YYYY-MM-DD)',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['page'] = {
-                in: 'query',
-                required: false,
-                type: 'integer'
-            }
-            #swagger.parameters['limit'] = {
-                in: 'query',
-                required: false,
-                type: 'integer'
-            }
-        */
         const userId = req.user!.userId;
         const { status, startDate, endDate, page, limit } = req.query;
 
@@ -116,17 +59,6 @@ export class LeaveController {
      * @access  Private
      */
     getLeaveById = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Get leave request by ID'
-            #swagger.description = 'Get details of a leave request'
-            #swagger.parameters['id'] = {
-                in: 'path',
-                required: true,
-                type: 'string',
-                description: 'Leave request ID'
-            }
-        */
         const { id } = req.params;
         const userId = req.user!.userId;
         const isAdmin = req.user!.role === 'admin';
@@ -145,33 +77,6 @@ export class LeaveController {
      * @access  Private
      */
     updateLeave = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Update leave request'
-            #swagger.description = 'Update a pending leave request'
-            #swagger.parameters['id'] = {
-                in: 'path',
-                required: true,
-                type: 'string',
-                description: 'Leave request ID'
-            }
-            #swagger.parameters['body'] = {
-                in: 'body',
-                required: true,
-                schema: {
-                    type: 'object',
-                    properties: {
-                        leaveType: { 
-                            type: 'string', 
-                            enum: ['Annual', 'Sick', 'Unpaid', 'Maternity', 'Paternity', 'Other']
-                        },
-                        startDate: { type: 'string', format: 'date' },
-                        endDate: { type: 'string', format: 'date' },
-                        reason: { type: 'string' }
-                    }
-                }
-            }
-        */
         const { id } = req.params;
         const userId = req.user!.userId;
         const updateData = req.body;
@@ -191,17 +96,6 @@ export class LeaveController {
      * @access  Private
      */
     cancelLeave = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Cancel leave request'
-            #swagger.description = 'Cancel a leave request'
-            #swagger.parameters['id'] = {
-                in: 'path',
-                required: true,
-                type: 'string',
-                description: 'Leave request ID'
-            }
-        */
         const { id } = req.params;
         const userId = req.user!.userId;
 
@@ -220,52 +114,6 @@ export class LeaveController {
      * @access  Private/Admin
      */
     getAllLeaves = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Get all leave requests'
-            #swagger.description = 'Get all leave requests (Admin only)'
-            #swagger.parameters['status'] = {
-                in: 'query',
-                description: 'Filter by status',
-                required: false,
-                type: 'string',
-                enum: ['Pending', 'Approved', 'Rejected', 'Cancelled']
-            }
-            #swagger.parameters['leaveType'] = {
-                in: 'query',
-                description: 'Filter by leave type',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['employeeId'] = {
-                in: 'query',
-                description: 'Filter by employee ID',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['startDate'] = {
-                in: 'query',
-                description: 'Start date (YYYY-MM-DD)',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['endDate'] = {
-                in: 'query',
-                description: 'End date (YYYY-MM-DD)',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['page'] = {
-                in: 'query',
-                required: false,
-                type: 'integer'
-            }
-            #swagger.parameters['limit'] = {
-                in: 'query',
-                required: false,
-                type: 'integer'
-            }
-        */
         const { status, leaveType, employeeId, startDate, endDate, page, limit } = req.query;
 
         const options = {
@@ -299,33 +147,6 @@ export class LeaveController {
      * @access  Private/Admin
      */
     approveOrRejectLeave = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Approve or reject leave request'
-            #swagger.description = 'Approve or reject a leave request (Admin only)'
-            #swagger.parameters['id'] = {
-                in: 'path',
-                required: true,
-                type: 'string',
-                description: 'Leave request ID'
-            }
-            #swagger.parameters['body'] = {
-                in: 'body',
-                required: true,
-                schema: {
-                    type: 'object',
-                    required: ['status'],
-                    properties: {
-                        status: { 
-                            type: 'string', 
-                            enum: ['Approved', 'Rejected'],
-                            example: 'Approved'
-                        },
-                        rejectionReason: { type: 'string', example: 'Insufficient leave balance' }
-                    }
-                }
-            }
-        */
         const { id } = req.params;
         const userId = req.user!.userId;
         const { status, rejectionReason } = req.body;
@@ -348,17 +169,6 @@ export class LeaveController {
      * @access  Private/Admin
      */
     deleteLeave = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Delete leave request'
-            #swagger.description = 'Delete a leave request (Admin only)'
-            #swagger.parameters['id'] = {
-                in: 'path',
-                required: true,
-                type: 'string',
-                description: 'Leave request ID'
-            }
-        */
         const { id } = req.params;
 
         await this.leaveService.deleteLeave(id);
@@ -375,17 +185,6 @@ export class LeaveController {
      * @access  Private
      */
     getUsedLeaveDays = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Get used leave days'
-            #swagger.description = 'Get number of used leave days for current year'
-            #swagger.parameters['year'] = {
-                in: 'query',
-                required: false,
-                type: 'integer',
-                description: 'Year (default: current year)'
-            }
-        */
         const userId = req.user!.userId;
         const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
 
@@ -406,29 +205,6 @@ export class LeaveController {
      * @access  Private/Admin
      */
     getLeaveStatistics = asyncHandler(async (req: Request, res: Response) => {
-        /* 
-            #swagger.tags = ['Leaves']
-            #swagger.summary = 'Get leave statistics'
-            #swagger.description = 'Get leave statistics (Admin only)'
-            #swagger.parameters['startDate'] = {
-                in: 'query',
-                description: 'Start date (YYYY-MM-DD)',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['endDate'] = {
-                in: 'query',
-                description: 'End date (YYYY-MM-DD)',
-                required: false,
-                type: 'string'
-            }
-            #swagger.parameters['status'] = {
-                in: 'query',
-                description: 'Filter by status',
-                required: false,
-                type: 'string'
-            }
-        */
         const { startDate, endDate, status } = req.query;
 
         const statistics = await this.leaveService.getLeaveStatistics({
